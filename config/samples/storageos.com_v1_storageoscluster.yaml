@@ -1,0 +1,7 @@
+apiVersion: storageos.com/v1
+kind: StorageOSCluster
+metadata:
+  name: storageoscluster-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: storageos
+    app.kubernetes.io/component: storageos-api-manager
+    app.kubernetes.io/service-for: storageos-api-server
+  name: storageos-api-manager
+  namespace: kube-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: storageos
+      app.kubernetes.io/component: storageos-api-manager
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: storageos
+        app.kubernetes.io/component: storageos-api-manager
+    spec:
+      containers:
+      - args:
+        - --enable-leader-election
+        - --metrics-addr=:8080
+        command:
+        - /manager
+        image: storageos/api-manager:v1.0.0
+        imagePullPolicy: IfNotPresent
+        name: api-manager
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/storageos/secrets/api
+          name: api-secret
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: storageos-api-manager-sa
+      serviceAccountName: storageos-api-manager-sa
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 30
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 30
+      volumes:
+      - name: api-secret
+        secret:
+          defaultMode: 384
+          secretName: init-secret

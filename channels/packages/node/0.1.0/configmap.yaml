@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  CSI_ENDPOINT: unix:///var/lib/kubelet/plugins_registry/storageos/csi.sock
+  CSI_VERSION: v1
+  DISABLE_CRASH_REPORTING: "false"
+  DISABLE_TELEMETRY: "false"
+  DISABLE_VERSION_CHECK: "false"
+  ETCD_ENDPOINTS: http://etcd-client:2379
+  K8S_ENABLE_SCHEDULER_EXTENDER: "true"
+  K8S_NAMESPACE: kube-system
+  LOG_FORMAT: json
+  LOG_LEVEL: info
+  RECOMMENDED_MAX_PIDS_LIMIT: "32768"
+kind: ConfigMap
+metadata:
+  labels:
+    app: storageos
+  name: storageos-node-config

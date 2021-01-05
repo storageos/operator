@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: storageos-api-manager-metrics
+  labels:
+    app: storageos
+spec:
+  clusterIP: 10.96.153.100
+  ports:
+  - name: metrics
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/component: storageos-api-manager
+  sessionAffinity: None
+  type: ClusterIP

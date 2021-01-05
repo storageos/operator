@@ -1,0 +1,9 @@
+manifests:
+- name: api-manager
+  version: 0.1.0
+- name: csi
+  version: 0.1.0
+- name: node
+  version: 0.1.0
+- name: scheduler
+  version: 0.1.0

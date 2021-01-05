@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: storageos:init
+  labels:
+    app: storageos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: storageos:init
+subjects:
+- kind: ServiceAccount
+  name: storageos-daemonset-sa
+  # NOTE: Find out how to make this namespace reference dynamic.
+  namespace: kube-system

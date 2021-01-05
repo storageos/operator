@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: storageos-daemonset
+  labels:
+    app: storageos
+spec:
+  selector:
+    matchLabels:
+      app: storageos
+      kind: daemonset
+  template:
+    metadata:
+      labels:
+        app: storageos
+        kind: daemonset
+    spec:
+      containers:
+      - args:
+        - server
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: BOOTSTRAP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: init-secret
+        - name: BOOTSTRAP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: init-secret
+        - name: ADVERTISE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: storageos-node-config
+            optional: false
+        image: storageos/node:v2.3.1
+        imagePullPolicy: IfNotPresent
+        name: storageos
+        ports:
+        - containerPort: 5705
+          hostPort: 5705
+          name: api
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /dev/fuse
+          name: fuse
+        - mountPath: /sys
+          name: sys
+        - mountPath: /var/lib/storageos
+          mountPropagation: Bidirectional
+          name: state
+        - mountPath: /etc/storageos
+          name: config
+        - mountPath: /var/lib/kubelet
+          mountPropagation: Bidirectional
+          name: kubelet-dir
+        - mountPath: /dev
+          name: device-dir
+      - args:
+        - --v=5
+        - --csi-address=$(ADDRESS)
+        - --kubelet-registration-path=/var/lib/kubelet/plugins_registry/storageos/csi.sock
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: quay.io/k8scsi/csi-node-driver-registrar:v1.2.0
+        imagePullPolicy: IfNotPresent
+        name: csi-driver-registrar
+        resources: {}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /var/lib/csi/sockets/
+          name: registrar-socket-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --csi-address=$(ADDRESS)
+        - --connection-timeout=3s
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        image: quay.io/k8scsi/livenessprobe:v1.1.0
+        imagePullPolicy: IfNotPresent
+        name: csi-liveness-probe
+        resources: {}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - env:
+        - name: DAEMONSET_NAME
+          value: storageos-daemonset
+        - name: DAEMONSET_NAMESPACE
+          value: kube-system
+        envFrom:
+        - configMapRef:
+            name: storageos-node-config
+            optional: false
+        image: storageos/init:v2.1.0
+        imagePullPolicy: IfNotPresent
+        name: storageos-init
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: kernel-modules
+          readOnly: true
+        - mountPath: /sys
+          mountPropagation: Bidirectional
+          name: sys
+        - mountPath: /var/lib/storageos
+          mountPropagation: Bidirectional
+          name: state
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      serviceAccount: storageos-daemonset-sa
+      serviceAccountName: storageos-daemonset-sa
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
+      - key: node.kubernetes.io/memory-pressure
+        operator: Exists
+      - key: node.kubernetes.io/network-unavailable
+        operator: Exists
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+      - key: node.kubernetes.io/out-of-disk
+        operator: Exists
+      - key: node.kubernetes.io/pid-pressure
+        operator: Exists
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+      - key: node.kubernetes.io/unschedulable
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: kernel-modules
+      - hostPath:
+          path: /dev/fuse
+          type: ""
+        name: fuse
+      - hostPath:
+          path: /sys
+          type: ""
+        name: sys
+      - hostPath:
+          path: /var/lib/storageos
+          type: ""
+        name: state
+      - configMap:
+          defaultMode: 384
+          name: storageos-node-config
+          optional: false
+        name: config
+      - hostPath:
+          path: /var/lib/kubelet/device-plugins/
+          type: DirectoryOrCreate
+        name: registrar-socket-dir
+      - hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+        name: kubelet-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry/storageos
+          type: DirectoryOrCreate
+        name: plugin-dir
+      - hostPath:
+          path: /dev
+          type: Directory
+        name: device-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: Directory
+        name: registration-dir
+  updateStrategy:
+    type: OnDelete

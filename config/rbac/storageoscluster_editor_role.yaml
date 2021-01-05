@@ -1,0 +1,24 @@
+# permissions for end users to edit storageosclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: storageoscluster-editor-role
+rules:
+- apiGroups:
+  - storageos.com
+  resources:
+  - storageosclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storageos.com
+  resources:
+  - storageosclusters/status
+  verbs:
+  - get
