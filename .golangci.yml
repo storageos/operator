@@ -1,0 +1,10 @@
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - unconvert
+    - gocyclo
+    - nakedret
+    - scopelint
+    - whitespace
+    - nolintlint
