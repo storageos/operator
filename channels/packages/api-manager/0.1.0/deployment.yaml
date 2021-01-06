@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   labels:
     app: storageos
-    app.kubernetes.io/component: storageos-api-manager
     app.kubernetes.io/service-for: storageos-api-server
   name: storageos-api-manager
   namespace: kube-system
@@ -55,5 +54,4 @@ spec:
       volumes:
       - name: api-secret
         secret:
-          defaultMode: 384
-          secretName: init-secret
+          secretName: storageos-api

@@ -1,0 +1,10 @@
+commonLabels:
+  app: storageos
+  app.kubernetes.io/component: storageos-api-manager
+
+resources:
+- serviceaccount.yaml
+- cluster-role.yaml
+- cluster-role-binding.yaml
+- metrics-service.yaml
+- deployment.yaml

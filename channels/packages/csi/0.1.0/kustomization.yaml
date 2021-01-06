@@ -1,0 +1,13 @@
+commonLabels:
+  app: storageos
+  app.kubernetes.io/component: csi
+
+resources:
+- attacher-cluster-role-binding.yaml
+- attacher-cluster-role.yaml
+- deployment.yaml
+- provisioner-cluster-role-binding.yaml
+- provisioner-cluster-role.yaml
+- resizer-cluster-role-binding.yaml
+- resizer-cluster-role.yaml
+- serviceaccount.yaml

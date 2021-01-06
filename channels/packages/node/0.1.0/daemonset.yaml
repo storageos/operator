@@ -2,18 +2,8 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: storageos-daemonset
-  labels:
-    app: storageos
 spec:
-  selector:
-    matchLabels:
-      app: storageos
-      kind: daemonset
   template:
-    metadata:
-      labels:
-        app: storageos
-        kind: daemonset
     spec:
       containers:
       - args:
@@ -119,7 +109,7 @@ spec:
         - name: DAEMONSET_NAME
           value: storageos-daemonset
         - name: DAEMONSET_NAMESPACE
-          value: kube-system
+          value: default
         envFrom:
         - configMapRef:
             name: storageos-node-config
@@ -183,7 +173,6 @@ spec:
           type: ""
         name: state
       - configMap:
-          defaultMode: 384
           name: storageos-node-config
           optional: false
         name: config

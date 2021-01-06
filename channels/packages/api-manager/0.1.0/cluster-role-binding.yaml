@@ -13,4 +13,4 @@ subjects:
 - kind: ServiceAccount
   name: storageos-api-manager-sa
   # NOTE: Find out how to make this namespace reference dynamic.
-  namespace: kube-system
+  namespace: default

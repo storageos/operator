@@ -2,19 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: storageos-csi-helper
-  labels:
-    app: storageos
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: storageos
   strategy:
     type: RollingUpdate
   template:
-    metadata:
-      labels:
-        app: storageos
     spec:
       containers:
       - args:

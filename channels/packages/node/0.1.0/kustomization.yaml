@@ -1,0 +1,13 @@
+commonLabels:
+  app: storageos
+  app.kubernetes.io/component: control-plane
+
+resources:
+- configmap.yaml
+- daemonset.yaml
+- driver-registrar-cluster-role-binding.yaml
+- driver-registrar-cluster-role.yaml
+- init-cluster-role-binding.yaml
+- init-cluster-role.yaml
+- service.yaml
+- serviceaccount.yaml

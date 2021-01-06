@@ -23,6 +23,4 @@ data:
         }
 kind: ConfigMap
 metadata:
-  labels:
-    app: storageos
   name: storageos-scheduler-policy

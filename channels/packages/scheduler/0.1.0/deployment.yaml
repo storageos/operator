@@ -1,21 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: storageos
   name: storageos-scheduler
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: storageos
   strategy:
     type: RollingUpdate
   template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: storageos
     spec:
       containers:
       - args:
@@ -23,7 +14,7 @@ spec:
         - --leader-elect=true
         - --scheduler-name=storageos-scheduler
         - --policy-configmap=storageos-scheduler-policy
-        - --policy-configmap-namespace=kube-system
+        - --policy-configmap-namespace=default
         - --lock-object-name=storageos-scheduler
         - -v=4
         image: k8s.gcr.io/kube-scheduler:v1.19.0

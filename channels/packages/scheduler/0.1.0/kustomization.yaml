@@ -1,0 +1,10 @@
+commonLabels:
+  app: storageos
+  app.kubernetes.io/component: scheduler
+
+resources:
+- cluster-role-binding.yaml
+- cluster-role.yaml
+- deployment.yaml
+- policy.yaml
+- serviceaccount.yaml
