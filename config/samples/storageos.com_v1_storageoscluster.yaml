@@ -4,4 +4,4 @@ metadata:
   name: storageoscluster-sample
 spec:
   # Add fields here
-  foo: bar
+  secretRefName: storageos-api

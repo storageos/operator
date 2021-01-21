@@ -38,6 +38,7 @@ func (c *StorageOSClusterController) Initialize(ctx context.Context, obj client.
 	}
 
 	meta.SetStatusCondition(&cluster.Status.Conditions, condn)
+	span.AddEvent("Added initial condition to status")
 
 	return nil
 }
@@ -70,6 +71,7 @@ func (c *StorageOSClusterController) UpdateStatus(ctx context.Context, obj clien
 		}
 		return fmt.Errorf("failed to get StorageOSCluster %q: %w", cluster.GetName(), getErr)
 	}
+	span.AddEvent("Fetched new instance")
 
 	// Check status of all the components.
 	ready := true
