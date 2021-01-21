@@ -50,5 +50,5 @@ func NewStorageOSClusterController(mgr ctrl.Manager, fs filesys.FileSystem, exec
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new operator: %w", err)
 	}
-	return &StorageOSClusterController{Operator: operator}, nil
+	return &StorageOSClusterController{Operator: operator, Client: mgr.GetClient()}, nil
 }

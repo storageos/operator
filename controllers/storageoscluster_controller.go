@@ -37,7 +37,7 @@ func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// TODO: Expose the executor strategy option via SetupWithManager.
-	cc, err := storageoscluster.NewStorageOSClusterController(mgr, fs, executor.Serial)
+	cc, err := storageoscluster.NewStorageOSClusterController(mgr, fs, executor.Parallel)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err = r.CompositeReconciler.Init(mgr, &storageoscomv1.StorageOSCluster{},
 		compositev1.WithName("storageoscluster-controller"),
 		compositev1.WithController(cc),
-		compositev1.WithCleanupStrategy(compositev1.OwnerReferenceCleanup),
+		compositev1.WithCleanupStrategy(compositev1.FinalizerCleanup),
 		compositev1.WithInitCondition(compositev1.DefaultInitCondition),
 		compositev1.WithLogger(r.Log),
 	)

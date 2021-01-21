@@ -8,6 +8,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/darkowlzz/operator-toolkit/telemetry/export"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -48,6 +49,14 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// Setup telemetry.
+	telemetryShutdown, err := export.InstallJaegerExporter("storageos-operator")
+	if err != nil {
+		setupLog.Error(err, "unable to setup telemetry exporter")
+		os.Exit(1)
+	}
+	defer telemetryShutdown()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

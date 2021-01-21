@@ -6,9 +6,9 @@ import (
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
-	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	"go.opentelemetry.io/otel"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -37,20 +37,14 @@ func (c *SchedulerOperand) ReadyCheck(ctx context.Context, obj client.Object) (b
 }
 
 func (c *SchedulerOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
-	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
-	if !ok {
-		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
-	}
+	// Setup a tracer and start a span.
+	tr := otel.Tracer("SchedulerOperand Ensure")
+	ctx, span := tr.Start(ctx, "scheduleroperand ensure")
+	defer span.End()
 
-	b, err := declarative.NewBuilder(schedulerPackage, c.fs,
-		declarative.WithCommonTransforms([]transform.TransformFunc{
-			transform.SetOwnerReference([]metav1.OwnerReference{ownerRef}),
-		}),
-		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
-			kustomize.AddNamespace(cluster.GetNamespace()),
-		}),
-	)
+	b, err := getSchedulerBuilder(c.fs, obj)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
@@ -58,7 +52,31 @@ func (c *SchedulerOperand) Ensure(ctx context.Context, obj client.Object, ownerR
 }
 
 func (c *SchedulerOperand) Delete(ctx context.Context, obj client.Object) (eventv1.ReconcilerEvent, error) {
-	return nil, nil
+	// Setup a tracer and start a span.
+	tr := otel.Tracer("SchedulerOperand Delete")
+	ctx, span := tr.Start(ctx, "scheduleroperand delete")
+	defer span.End()
+
+	b, err := getSchedulerBuilder(c.fs, obj)
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	return nil, b.Delete(ctx)
+}
+
+func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
+	}
+
+	return declarative.NewBuilder(schedulerPackage, fs,
+		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
+			kustomize.AddNamespace(cluster.GetNamespace()),
+		}),
+	)
 }
 
 func NewSchedulerOperand(
