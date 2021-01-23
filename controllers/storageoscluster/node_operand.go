@@ -3,9 +3,11 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
+	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
 	"go.opentelemetry.io/otel"
@@ -14,10 +16,16 @@ import (
 	"sigs.k8s.io/kustomize/api/filesys"
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
+	stransform "github.com/storageos/operator/transform"
 )
 
-// nodePackage contains the resource manifests for node operand.
-const nodePackage = "node"
+const (
+	// nodePackage contains the resource manifests for node operand.
+	nodePackage = "node"
+
+	// storageosContainer is the name of the storageos container.
+	storageosContainer = "storageos"
+)
 
 type NodeOperand struct {
 	name            string
@@ -72,7 +80,31 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
 	}
 
+	// Create daemonset transforms.
+	daemonsetTransforms := []transform.TransformFunc{}
+	usernameTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
+	if err != nil {
+		return nil, err
+	}
+	passwordTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
+	if err != nil {
+		return nil, err
+	}
+	daemonsetTransforms = append(daemonsetTransforms, usernameTF, passwordTF)
+
+	// Create configmap transforms.
+	configmapTransforms := []transform.TransformFunc{
+		stransform.SetConfigMapData("ETCD_ENDPOINTS", cluster.Spec.KVBackend.Address),
+		stransform.SetConfigMapData("DISABLE_TELEMETRY", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
+		stransform.SetConfigMapData("DISABLE_VERSION_CHECK", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
+		stransform.SetConfigMapData("DISABLE_CRASH_REPORTING", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
+	}
+
 	return declarative.NewBuilder(nodePackage, fs,
+		declarative.WithManifestTransform(transform.ManifestTransform{
+			"node/daemonset.yaml": daemonsetTransforms,
+			"node/configmap.yaml": configmapTransforms,
+		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
 		}),

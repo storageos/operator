@@ -50,7 +50,7 @@ type StorageOSClusterSpec struct {
 	Images ContainerImages `json:"images,omitempty"`
 
 	// KVBackend defines the key-value store backend used in the cluster.
-	KVBackend StorageOSClusterKVBackend `json:"kvBackend,omitempty"`
+	KVBackend StorageOSClusterKVBackend `json:"kvBackend"`
 
 	// Pause is to pause the operator for the cluster.
 	Pause bool `json:"pause,omitempty"`
@@ -191,7 +191,7 @@ type StorageOSClusterIngress struct {
 
 // StorageOSClusterKVBackend stores key-value store backend configurations.
 type StorageOSClusterKVBackend struct {
-	Address string `json:"address,omitempty"`
+	Address string `json:"address"`
 	Backend string `json:"backend,omitempty"`
 }
 

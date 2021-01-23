@@ -196,6 +196,8 @@ spec:
                     type: string
                   backend:
                     type: string
+                required:
+                - address
                 type: object
               namespace:
                 description: Namespace is the kubernetes Namespace where storageos
@@ -392,6 +394,7 @@ spec:
                   type: object
                 type: array
             required:
+            - kvBackend
             - secretRefName
             type: object
           status:
