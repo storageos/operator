@@ -11,3 +11,17 @@ resources:
 - init-cluster-role.yaml
 - service.yaml
 - serviceaccount.yaml
+
+images:
+  - name: storageos-init
+    newName: storageos/init
+    newTag: v2.1.0
+  - name: storageos-node
+    newName: storageos/node
+    newTag: v2.3.1
+  - name: csi-node-driver-registrar
+    newName: quay.io/k8scsi/csi-node-driver-registrar
+    newTag: v1.2.0
+  - name: csi-livenessprobe
+    newName: quay.io/k8scsi/livenessprobe
+    newTag: v1.1.0

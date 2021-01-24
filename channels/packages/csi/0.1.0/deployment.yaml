@@ -17,7 +17,7 @@ spec:
         env:
         - name: ADDRESS
           value: /csi/csi.sock
-        image: storageos/csi-provisioner:v1.6.0-patched
+        image: csi-provisioner
         imagePullPolicy: IfNotPresent
         name: csi-external-provisioner
         securityContext:
@@ -31,7 +31,7 @@ spec:
         env:
         - name: ADDRESS
           value: /csi/csi.sock
-        image: quay.io/k8scsi/csi-attacher:v2.2.0
+        image: csi-attacher
         imagePullPolicy: IfNotPresent
         name: csi-external-attacher
         securityContext:
@@ -45,7 +45,7 @@ spec:
         env:
         - name: ADDRESS
           value: /csi/csi.sock
-        image: quay.io/k8scsi/csi-resizer:v0.5.0
+        image: csi-resizer
         imagePullPolicy: IfNotPresent
         name: csi-external-resizer
         securityContext:

@@ -26,7 +26,7 @@ spec:
         - --metrics-addr=:8080
         command:
         - /manager
-        image: storageos/api-manager:v1.0.0
+        image: api-manager
         imagePullPolicy: IfNotPresent
         name: api-manager
         ports:

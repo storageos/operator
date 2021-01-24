@@ -12,8 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
+	"github.com/storageos/operator/internal/image"
 )
 
 // csiPackage contains the resource manifests for csi operand.
@@ -72,9 +74,19 @@ func getCSIBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Build
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
 	}
 
+	// Get image names.
+	images := []kustomizetypes.Image{}
+	namedImages := image.NamedImages{
+		"csi-provisioner": cluster.Spec.Images.CSIExternalProvisionerContainer,
+		"csi-attacher":    cluster.Spec.Images.CSIExternalAttacherContainer,
+		"csi-resizer":     cluster.Spec.Images.CSIExternalResizerContainer,
+	}
+	images = append(images, image.GetKustomizeImageList(namedImages)...)
+
 	return declarative.NewBuilder(csiPackage, fs,
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
+			kustomize.AddImages(images),
 		}),
 	)
 }

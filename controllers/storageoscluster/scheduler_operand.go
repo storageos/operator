@@ -12,8 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
+	"github.com/storageos/operator/internal/image"
 )
 
 // schedulerPackage contains the resource manifests for scheduler operand.
@@ -72,9 +74,17 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
 	}
 
+	// Get image name.
+	images := []kustomizetypes.Image{}
+	namedImages := image.NamedImages{
+		"kube-scheduler": cluster.Spec.Images.KubeSchedulerContainer,
+	}
+	images = append(images, image.GetKustomizeImageList(namedImages)...)
+
 	return declarative.NewBuilder(schedulerPackage, fs,
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
+			kustomize.AddImages(images),
 		}),
 	)
 }

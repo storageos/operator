@@ -11,3 +11,14 @@ resources:
 - resizer-cluster-role-binding.yaml
 - resizer-cluster-role.yaml
 - serviceaccount.yaml
+
+images:
+  - name: csi-provisioner
+    newName: storageos/csi-provisioner
+    newTag: v1.6.0-patched
+  - name: csi-attacher
+    newName: quay.io/k8scsi/csi-attacher
+    newTag: v2.2.0
+  - name: csi-resizer
+    newName: quay.io/k8scsi/csi-resizer
+    newTag: v0.5.0

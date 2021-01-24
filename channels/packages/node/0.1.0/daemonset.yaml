@@ -33,7 +33,7 @@ spec:
         - configMapRef:
             name: storageos-node-config
             optional: false
-        image: storageos/node:v2.3.1
+        image: storageos-node
         imagePullPolicy: IfNotPresent
         name: storageos
         ports:
@@ -74,7 +74,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        image: quay.io/k8scsi/csi-node-driver-registrar:v1.2.0
+        image: csi-node-driver-registrar
         imagePullPolicy: IfNotPresent
         name: csi-driver-registrar
         resources: {}
@@ -93,7 +93,7 @@ spec:
         env:
         - name: ADDRESS
           value: /csi/csi.sock
-        image: quay.io/k8scsi/livenessprobe:v1.1.0
+        image: csi-livenessprobe
         imagePullPolicy: IfNotPresent
         name: csi-liveness-probe
         resources: {}
@@ -114,7 +114,7 @@ spec:
         - configMapRef:
             name: storageos-node-config
             optional: false
-        image: storageos/init:v2.1.0
+        image: storageos-init
         imagePullPolicy: IfNotPresent
         name: storageos-init
         resources: {}

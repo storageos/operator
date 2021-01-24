@@ -8,3 +8,8 @@ resources:
 - cluster-role-binding.yaml
 - metrics-service.yaml
 - deployment.yaml
+
+images:
+  - name: api-manager
+    newName: storageos/api-manager
+    newTag: v1.0.0

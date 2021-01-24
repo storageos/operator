@@ -14,8 +14,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
+	"github.com/storageos/operator/internal/image"
 	stransform "github.com/storageos/operator/transform"
 )
 
@@ -80,6 +82,16 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
 	}
 
+	// Get image names.
+	images := []kustomizetypes.Image{}
+	namedImages := image.NamedImages{
+		"storageos-init":            cluster.Spec.Images.InitContainer,
+		"storageos-node":            cluster.Spec.Images.NodeContainer,
+		"csi-node-driver-registrar": cluster.Spec.Images.CSINodeDriverRegistrarContainer,
+		"csi-livenessprobe":         cluster.Spec.Images.CSILivenessProbeContainer,
+	}
+	images = append(images, image.GetKustomizeImageList(namedImages)...)
+
 	// Create daemonset transforms.
 	daemonsetTransforms := []transform.TransformFunc{}
 	usernameTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
@@ -107,6 +119,7 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
+			kustomize.AddImages(images),
 		}),
 	)
 }
