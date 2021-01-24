@@ -18,7 +18,7 @@ import (
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
 	"github.com/storageos/operator/internal/image"
-	stransform "github.com/storageos/operator/transform"
+	stransform "github.com/storageos/operator/internal/transform"
 )
 
 const (
