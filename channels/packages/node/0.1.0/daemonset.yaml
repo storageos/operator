@@ -18,12 +18,12 @@ spec:
           valueFrom:
             secretKeyRef:
               key: username
-              name: init-secret
+              name: storageos-api
         - name: BOOTSTRAP_PASSWORD
           valueFrom:
             secretKeyRef:
               key: password
-              name: init-secret
+              name: storageos-api
         - name: ADVERTISE_IP
           valueFrom:
             fieldRef:

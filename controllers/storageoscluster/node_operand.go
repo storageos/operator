@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strconv"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
@@ -27,6 +28,14 @@ const (
 
 	// storageosContainer is the name of the storageos container.
 	storageosContainer = "storageos"
+
+	// Etcd TLS cert file names.
+	tlsEtcdCA         = "etcd-client-ca.crt"
+	tlsEtcdClientCert = "etcd-client.crt"
+	tlsEtcdClientKey  = "etcd-client.key"
+
+	// Etcd cert root path.
+	tlsEtcdRootPath = "/run/storageos/pki"
 )
 
 type NodeOperand struct {
@@ -108,8 +117,30 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	configmapTransforms := []transform.TransformFunc{
 		stransform.SetConfigMapData("ETCD_ENDPOINTS", cluster.Spec.KVBackend.Address),
 		stransform.SetConfigMapData("DISABLE_TELEMETRY", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
+		// TODO: separte CR items for version check and crash reports.  Use
+		// Telemetry to enable/disable everything for now.
 		stransform.SetConfigMapData("DISABLE_VERSION_CHECK", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
 		stransform.SetConfigMapData("DISABLE_CRASH_REPORTING", strconv.FormatBool(cluster.Spec.DisableTelemetry)),
+		stransform.SetConfigMapData("CSI_ENDPOINT", cluster.GetCSIEndpoint()),
+		stransform.SetConfigMapData("LOG_LEVEL", cluster.GetLogLevel()),
+	}
+
+	// If etcd TLS related values are set, set the etcd related configurations.
+	if cluster.Spec.TLSEtcdSecretRefName != "" && cluster.Spec.TLSEtcdSecretRefNamespace != "" {
+		etcdConfig := []transform.TransformFunc{
+			stransform.SetConfigMapData("ETCD_TLS_CLIENT_CA", filepath.Join(tlsEtcdRootPath, tlsEtcdCA)),
+			stransform.SetConfigMapData("ETCD_TLS_CLIENT_KEY", filepath.Join(tlsEtcdRootPath, tlsEtcdClientKey)),
+			stransform.SetConfigMapData("ETCD_TLS_CLIENT_CERT", filepath.Join(tlsEtcdRootPath, tlsEtcdClientCert)),
+		}
+		configmapTransforms = append(configmapTransforms, etcdConfig...)
+	}
+
+	if cluster.Spec.K8sDistro != "" {
+		configmapTransforms = append(configmapTransforms, stransform.SetConfigMapData("K8S_DISTRO", cluster.Spec.K8sDistro))
+	}
+
+	if cluster.Spec.SharedDir != "" {
+		configmapTransforms = append(configmapTransforms, stransform.SetConfigMapData("DEVICE_DIR", cluster.GetSharedDir()))
 	}
 
 	return declarative.NewBuilder(nodePackage, fs,
