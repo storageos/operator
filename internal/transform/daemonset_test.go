@@ -289,6 +289,17 @@ hostPath:
   path: /usr/local/bin/foo
   type: File`,
 		},
+		{
+			name:   "no path type",
+			volume: "somedir",
+			path:   "/xyz",
+			wantVal: `
+name: somedir
+hostPath:
+  path: /xyz
+  type:
+`,
+		},
 	}
 
 	for _, tc := range cases {
@@ -488,6 +499,93 @@ secret:
 
 			volumeSelector := fmt.Sprintf("[name=%s]", tc.volume)
 			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
+			assert.Nil(t, err)
+
+			str, err := val.String()
+			assert.Nil(t, err)
+			assert.Equal(t, strings.TrimSpace(tc.wantVal), strings.TrimSpace(str))
+		})
+	}
+}
+
+func TestSetDaemonSetVolumeMountFunc(t *testing.T) {
+	testObj, err := yaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
+      - name: someotherapp
+        image: some-image:v1.2.3
+        volumeMounts:
+        - mountPath: /dev/faz
+          name: foo
+      volumes:
+      - name: foo
+        secret:
+          secretName: mysecret
+`)
+	assert.Nil(t, err)
+
+	cases := []struct {
+		name             string
+		container        string
+		volName          string
+		mountPath        string
+		mountPropagation corev1.MountPropagationMode
+		wantVal          string
+	}{
+		{
+			name:      "add new volume mount",
+			container: "someapp",
+			volName:   "app-vol",
+			mountPath: "/app/data",
+			wantVal: `
+name: app-vol
+mountPath: /app/data`,
+		},
+		{
+			name:      "overwrite existing volume mount",
+			container: "someotherapp",
+			volName:   "foo",
+			mountPath: "/mnt/foo",
+			wantVal: `
+mountPath: /mnt/foo
+name: foo`,
+		},
+		{
+			name:             "add mount propagation",
+			container:        "someotherapp",
+			volName:          "foo",
+			mountPath:        "/mnt/foo",
+			mountPropagation: corev1.MountPropagationBidirectional,
+			wantVal: `
+mountPath: /mnt/foo
+name: foo
+mountPropagation: Bidirectional`,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy of the object.
+			obj := testObj.Copy()
+
+			// Transform.
+			tf := SetDaemonSetVolumeMountFunc(tc.container, tc.volName, tc.mountPath, tc.mountPropagation)
+			err = tf(obj)
+			assert.Nil(t, err)
+
+			// Query and check the value.
+			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
+			volMountSelector := fmt.Sprintf("[name=%s]", tc.volName)
+			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "volumeMounts", volMountSelector))
 			assert.Nil(t, err)
 
 			str, err := val.String()

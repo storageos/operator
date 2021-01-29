@@ -12,6 +12,10 @@ const (
 	// Field names of the environment variables.
 	envVarValue     = "value"
 	envVarValueFrom = "valueFrom"
+
+	// Field names in volume mounts.
+	volMountPath        = "mountPath"
+	volMountPropagation = "mountPropagation"
 )
 
 // SetDaemonSetEnvVarFunc sets the environment variable in a DaemonSet
@@ -112,4 +116,36 @@ func SetDaemonSetSecretVolumeFunc(volume string, secretName string, keyToPaths [
 
 	// Return a transform func to set the secret volume source.
 	return SetDaemonSetVolumeFunc(volume, volSrcSecret, secret), nil
+}
+
+// SetDaemonSetVolumeMountFunc sets a volumeMount for a given container in a
+// DaemonSet.
+func SetDaemonSetVolumeMountFunc(container, volName, mountPath string, mountPropagation corev1.MountPropagationMode) transform.TransformFunc {
+	return func(obj *yaml.RNode) error {
+		// Create selectors.
+		containerSelector := fmt.Sprintf("[name=%s]", container)
+		volumeMountSelector := fmt.Sprintf("[name=%s]", volName)
+
+		// Add mount path.
+		err := obj.PipeE(
+			yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
+			yaml.SetField(volMountPath, yaml.NewScalarRNode(mountPath)),
+		)
+		if err != nil {
+			return err
+		}
+
+		// Add mount propagation if provided.
+		if mountPropagation != "" {
+			err := obj.PipeE(
+				yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
+				yaml.SetField(volMountPropagation, yaml.NewScalarRNode(string(mountPropagation))),
+			)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }

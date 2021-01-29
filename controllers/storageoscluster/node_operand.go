@@ -36,6 +36,12 @@ const (
 
 	// Etcd cert root path.
 	tlsEtcdRootPath = "/run/storageos/pki"
+
+	// Etcd certs volume name.
+	tlsEtcdCertsVolume = "etcd-certs"
+
+	// Shared device directory volume name.
+	sharedDirVolume = "shared"
 )
 
 type NodeOperand struct {
@@ -103,6 +109,8 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 
 	// Create daemonset transforms.
 	daemonsetTransforms := []transform.TransformFunc{}
+
+	// Create transforms for setting bootstrap credentials.
 	usernameTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
 	if err != nil {
 		return nil, err
@@ -125,8 +133,19 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		stransform.SetConfigMapData("LOG_LEVEL", cluster.GetLogLevel()),
 	}
 
-	// If etcd TLS related values are set, set the etcd related configurations.
-	if cluster.Spec.TLSEtcdSecretRefName != "" && cluster.Spec.TLSEtcdSecretRefNamespace != "" {
+	// If etcd TLS related values are set, mount the secret volume and set the
+	// etcd related configurations.
+	if cluster.Spec.TLSEtcdSecretRefName != "" {
+		// Add etcd secret volume transform.
+		etcdSecretVolTF, err := stransform.SetDaemonSetSecretVolumeFunc("etcd-certs", cluster.Spec.TLSEtcdSecretRefName, nil)
+		if err != nil {
+			return nil, err
+		}
+		// Add etcd secret volume mount transform.
+		etcdSecretVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, tlsEtcdCertsVolume, tlsEtcdRootPath, "")
+		daemonsetTransforms = append(daemonsetTransforms, etcdSecretVolTF, etcdSecretVolMountTF)
+
+		// Add etcd secret configuration transforms.
 		etcdConfig := []transform.TransformFunc{
 			stransform.SetConfigMapData("ETCD_TLS_CLIENT_CA", filepath.Join(tlsEtcdRootPath, tlsEtcdCA)),
 			stransform.SetConfigMapData("ETCD_TLS_CLIENT_KEY", filepath.Join(tlsEtcdRootPath, tlsEtcdClientKey)),
@@ -139,7 +158,19 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		configmapTransforms = append(configmapTransforms, stransform.SetConfigMapData("K8S_DISTRO", cluster.Spec.K8sDistro))
 	}
 
+	// If shared dir is set, mount the device as host path volume and set the
+	// configuration.
 	if cluster.Spec.SharedDir != "" {
+		// Add shared device volume transform.
+		sharedDeviceVolTF, err := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, "")
+		if err != nil {
+			return nil, err
+		}
+		// Add shared device volumemount transform.
+		sharedDeviceVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, sharedDirVolume, cluster.Spec.SharedDir, "")
+		daemonsetTransforms = append(daemonsetTransforms, sharedDeviceVolTF, sharedDeviceVolMountTF)
+
+		// Add shared device configuration transform.
 		configmapTransforms = append(configmapTransforms, stransform.SetConfigMapData("DEVICE_DIR", cluster.GetSharedDir()))
 	}
 
