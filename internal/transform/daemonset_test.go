@@ -699,3 +699,90 @@ spec:
 		})
 	}
 }
+
+func TestSetDaemonSetTolerationsFunc(t *testing.T) {
+	testObj, err := kyaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
+      - name: someotherapp
+        image: some-image:v1.2.3
+      tolerations:
+        - key: some-xyz
+          operator: Exists
+`)
+	assert.Nil(t, err)
+
+	cases := []struct {
+		name            string
+		tolerations     []corev1.Toleration
+		wantTolerations string
+		wantErr         bool
+	}{
+		{
+			name: "add new tolerations",
+			tolerations: []corev1.Toleration{
+				{
+					Key:      "some-toleration",
+					Operator: corev1.TolerationOpEqual,
+					Value:    "foo",
+					Effect:   corev1.TaintEffectNoExecute,
+				},
+				{
+					Key:      "someother-toleration",
+					Operator: corev1.TolerationOpExists,
+				},
+			},
+			wantTolerations: `
+- key: some-xyz
+  operator: Exists
+- effect: NoExecute
+  key: some-toleration
+  operator: Equal
+  value: foo
+- key: someother-toleration
+  operator: Exists`,
+		},
+		{
+			name: "invalid value",
+			tolerations: []corev1.Toleration{
+				{
+					Key:      "some-toleration",
+					Operator: corev1.TolerationOpExists,
+					Value:    "foo",
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy of the object.
+			obj := testObj.Copy()
+
+			tf := SetDaemonSetTolerationFunc(tc.tolerations)
+			err = tf(obj)
+			if !tc.wantErr {
+				assert.Nil(t, err)
+
+				// Query and check the result.
+				gotTolerations, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "tolerations"))
+				assert.Nil(t, err)
+				gotStr, err := gotTolerations.String()
+				assert.Nil(t, err)
+				assert.Equal(t, strings.TrimSpace(tc.wantTolerations), strings.TrimSpace(gotStr))
+			} else {
+				assert.NotNil(t, err)
+			}
+		})
+	}
+}

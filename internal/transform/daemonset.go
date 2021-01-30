@@ -190,3 +190,32 @@ func SetDaemonSetContainerResourceFunc(container string, resReq corev1.ResourceR
 		)
 	}
 }
+
+// SetDaemonSetTolerationFunc sets the pod tolerations in a DaemonSet.
+func SetDaemonSetTolerationFunc(tolerations []corev1.Toleration) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Validate the tolerations.
+		for _, toleration := range tolerations {
+			if toleration.Operator == corev1.TolerationOpExists && toleration.Value != "" {
+				return fmt.Errorf("key(%s): toleration value must be empty when `operator` is 'Exists'", toleration.Key)
+			}
+		}
+
+		// Convert go typed resource to yaml.
+		tolList, err := yaml.Marshal(tolerations)
+		if err != nil {
+			return err
+		}
+
+		// Parse the yaml tolerations to create an RNode.
+		tols, err := kyaml.Parse(string(tolList))
+		if err != nil {
+			return err
+		}
+
+		return obj.PipeE(
+			kyaml.LookupCreate(kyaml.MappingNode, "spec", "template", "spec", "tolerations"),
+			kyaml.Append(tols.YNode().Content...),
+		)
+	}
+}
