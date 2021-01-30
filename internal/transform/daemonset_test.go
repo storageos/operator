@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/kustomize/kyaml/yaml"
+	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 func TestSetDaemonSetEnvVarStringFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -69,7 +69,7 @@ spec:
 			// Query and check the value.
 			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
 			envVarSelector := fmt.Sprintf("[name=%s]", tc.key)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "value"))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "value"))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -80,7 +80,7 @@ spec:
 }
 
 func TestSetDaemonSetEnvVarValueFromSecretFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -146,7 +146,7 @@ secretKeyRef:
 
 			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
 			envVarSelector := fmt.Sprintf("[name=%s]", tc.key)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "valueFrom"))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "valueFrom"))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -157,7 +157,7 @@ secretKeyRef:
 }
 
 func TestSetDaemonSetEnvVarValueFromFieldFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -220,7 +220,7 @@ fieldRef:
 
 			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
 			envVarSelector := fmt.Sprintf("[name=%s]", tc.key)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "valueFrom"))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "env", envVarSelector, "valueFrom"))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -231,7 +231,7 @@ fieldRef:
 }
 
 func TestSetDaemonSetHostPathVolumeFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -315,7 +315,7 @@ hostPath:
 			assert.Nil(t, err)
 
 			volumeSelector := fmt.Sprintf("[name=%s]", tc.volume)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -326,7 +326,7 @@ hostPath:
 }
 
 func TestSetDaemonSetConfigMapVolumeFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -407,7 +407,7 @@ configMap:
 			assert.Nil(t, err)
 
 			volumeSelector := fmt.Sprintf("[name=%s]", tc.volume)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -418,7 +418,7 @@ configMap:
 }
 
 func TestSetDaemonSetSecretVolumeFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -499,7 +499,7 @@ secret:
 			assert.Nil(t, err)
 
 			volumeSelector := fmt.Sprintf("[name=%s]", tc.volume)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "volumes", volumeSelector))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -510,7 +510,7 @@ secret:
 }
 
 func TestSetDaemonSetVolumeMountFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -586,7 +586,7 @@ mountPropagation: Bidirectional`,
 			// Query and check the value.
 			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
 			volMountSelector := fmt.Sprintf("[name=%s]", tc.volName)
-			val, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "volumeMounts", volMountSelector))
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "volumeMounts", volMountSelector))
 			assert.Nil(t, err)
 
 			str, err := val.String()
@@ -597,7 +597,7 @@ mountPropagation: Bidirectional`,
 }
 
 func TestSetDaemonSetContainerResourceFunc(t *testing.T) {
-	testObj, err := yaml.Parse(`
+	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -660,43 +660,10 @@ spec:
 				},
 			},
 			wantLimits: map[string]string{
-				"cpu":    "900m",
-				"memory": "950Mi",
+				"cpu": "900m",
 			},
 			wantRequests: map[string]string{
 				"memory": "900Mi",
-			},
-		},
-		{
-			name:      "set limits only",
-			container: "someotherapp",
-			resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: resource.MustParse("925Mi"),
-				},
-			},
-			wantLimits: map[string]string{
-				"cpu":    "500m",
-				"memory": "925Mi",
-			},
-			wantRequests: map[string]string{
-				"memory": "700Mi",
-			},
-		},
-		{
-			name:      "set requests only",
-			container: "someotherapp",
-			resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: resource.MustParse("925Mi"),
-				},
-			},
-			wantLimits: map[string]string{
-				"cpu":    "500m",
-				"memory": "950Mi",
-			},
-			wantRequests: map[string]string{
-				"memory": "925Mi",
 			},
 		},
 	}
@@ -715,7 +682,7 @@ spec:
 			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
 
 			for key, val := range tc.wantLimits {
-				gotLimits, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "limits", key))
+				gotLimits, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "limits", key))
 				assert.Nil(t, err)
 				gotStr, err := gotLimits.String()
 				assert.Nil(t, err)
@@ -723,7 +690,7 @@ spec:
 			}
 
 			for key, val := range tc.wantRequests {
-				gotLimits, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "requests", key))
+				gotLimits, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "requests", key))
 				assert.Nil(t, err)
 				gotStr, err := gotLimits.String()
 				assert.Nil(t, err)

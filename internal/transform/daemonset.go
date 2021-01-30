@@ -5,7 +5,8 @@ import (
 
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/kustomize/kyaml/yaml"
+	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -20,13 +21,13 @@ const (
 
 // SetDaemonSetEnvVarFunc sets the environment variable in a DaemonSet
 // container for the given key and value field.
-func SetDaemonSetEnvVarFunc(container string, key string, valField string, value *yaml.RNode) transform.TransformFunc {
-	return func(obj *yaml.RNode) error {
+func SetDaemonSetEnvVarFunc(container string, key string, valField string, value *kyaml.RNode) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
 		containerSelector := fmt.Sprintf("[name=%s]", container)
 		envVarSelector := fmt.Sprintf("[name=%s]", key)
 		return obj.PipeE(
-			yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "env", envVarSelector),
-			yaml.SetField(valField, value),
+			kyaml.LookupCreate(kyaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "env", envVarSelector),
+			kyaml.SetField(valField, value),
 		)
 	}
 }
@@ -34,7 +35,7 @@ func SetDaemonSetEnvVarFunc(container string, key string, valField string, value
 // SetDaemonSetEnvVarStringFunc sets a string value environment variable for a
 // given container in a DaemonSet.
 func SetDaemonSetEnvVarStringFunc(container, key, val string) transform.TransformFunc {
-	return SetDaemonSetEnvVarFunc(container, key, envVarValue, yaml.NewScalarRNode(val))
+	return SetDaemonSetEnvVarFunc(container, key, envVarValue, kyaml.NewScalarRNode(val))
 }
 
 // SetDaemonSetEnvVarValueFromSecretFunc sets a valueFrom secretKeyRef
@@ -45,7 +46,7 @@ secretKeyRef:
   name: %s
   key: %s
 `, secretName, secretKey)
-	secretKeyRef, err := yaml.Parse(secretKeyRefString)
+	secretKeyRef, err := kyaml.Parse(secretKeyRefString)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ fieldRef:
   apiVersion: v1
   fieldPath: %s
 `, fieldPath)
-	fieldRef, err := yaml.Parse(fieldRefString)
+	fieldRef, err := kyaml.Parse(fieldRefString)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +70,12 @@ fieldRef:
 
 // SetDaemonSetVolumeFunc sets a volume in a DaemonSet for the given name and
 // volume source.
-func SetDaemonSetVolumeFunc(volume string, volumeSource string, value *yaml.RNode) transform.TransformFunc {
-	return func(obj *yaml.RNode) error {
+func SetDaemonSetVolumeFunc(volume string, volumeSource string, value *kyaml.RNode) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
 		volumeSelector := fmt.Sprintf("[name=%s]", volume)
 		return obj.PipeE(
-			yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "volumes", volumeSelector),
-			yaml.SetField(volumeSource, value),
+			kyaml.LookupCreate(kyaml.ScalarNode, "spec", "template", "spec", "volumes", volumeSelector),
+			kyaml.SetField(volumeSource, value),
 		)
 	}
 }
@@ -121,15 +122,15 @@ func SetDaemonSetSecretVolumeFunc(volume string, secretName string, keyToPaths [
 // SetDaemonSetVolumeMountFunc sets a volumeMount for a given container in a
 // DaemonSet.
 func SetDaemonSetVolumeMountFunc(container, volName, mountPath string, mountPropagation corev1.MountPropagationMode) transform.TransformFunc {
-	return func(obj *yaml.RNode) error {
+	return func(obj *kyaml.RNode) error {
 		// Create selectors.
 		containerSelector := fmt.Sprintf("[name=%s]", container)
 		volumeMountSelector := fmt.Sprintf("[name=%s]", volName)
 
 		// Add mount path.
 		err := obj.PipeE(
-			yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
-			yaml.SetField(volMountPath, yaml.NewScalarRNode(mountPath)),
+			kyaml.LookupCreate(kyaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
+			kyaml.SetField(volMountPath, kyaml.NewScalarRNode(mountPath)),
 		)
 		if err != nil {
 			return err
@@ -138,8 +139,8 @@ func SetDaemonSetVolumeMountFunc(container, volName, mountPath string, mountProp
 		// Add mount propagation if provided.
 		if mountPropagation != "" {
 			err := obj.PipeE(
-				yaml.LookupCreate(yaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
-				yaml.SetField(volMountPropagation, yaml.NewScalarRNode(string(mountPropagation))),
+				kyaml.LookupCreate(kyaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector, "volumeMounts", volumeMountSelector),
+				kyaml.SetField(volMountPropagation, kyaml.NewScalarRNode(string(mountPropagation))),
 			)
 			if err != nil {
 				return err
@@ -153,36 +154,39 @@ func SetDaemonSetVolumeMountFunc(container, volName, mountPath string, mountProp
 // SetDaemonSetContainerResourceFunc sets the resource requirements of a
 // container in a DaemonSet.
 func SetDaemonSetContainerResourceFunc(container string, resReq corev1.ResourceRequirements) transform.TransformFunc {
-	return func(obj *yaml.RNode) error {
+	return func(obj *kyaml.RNode) error {
 		// Create selectors.
 		containerSelector := fmt.Sprintf("[name=%s]", container)
 
-		// Add resource limits if provided.
-		if len(resReq.Limits) > 0 {
-			for key, val := range resReq.Limits {
-				err := obj.PipeE(
-					yaml.LookupCreate(yaml.MappingNode, "spec", "template", "spec", "containers", containerSelector, "resources", "limits"),
-					yaml.SetField(key.String(), yaml.NewScalarRNode(val.String())),
-				)
-				if err != nil {
-					return err
-				}
-			}
+		// Convert go typed resource to yaml.
+		// NOTE: Using sigs.k8s.io/yaml for correct decoding of the values.
+		// Using kyaml's Marshal doesn't decode with proper values.
+		//
+		// Following is an example result of using kyaml marshal:
+		//   limits:
+		//	   cpu:
+		//		   format: DecimalSI
+		//	   memory:
+		//		   format: BinarySI
+		//
+		// Following is an example result of using sigs.k8s.io/yaml marshal:
+		//   limits:
+		//     cpu: 200m
+		//     memory: 500Mi
+		resReqBytes, err := yaml.Marshal(resReq)
+		if err != nil {
+			return err
 		}
 
-		// Add resource requests if provided.
-		if len(resReq.Requests) > 0 {
-			for key, val := range resReq.Requests {
-				err := obj.PipeE(
-					yaml.LookupCreate(yaml.MappingNode, "spec", "template", "spec", "containers", containerSelector, "resources", "requests"),
-					yaml.SetField(key.String(), yaml.NewScalarRNode(val.String())),
-				)
-				if err != nil {
-					return err
-				}
-			}
+		// Parse the yaml resource to create an RNode.
+		resources, err := kyaml.Parse(string(resReqBytes))
+		if err != nil {
+			return err
 		}
 
-		return nil
+		return obj.PipeE(
+			kyaml.LookupCreate(kyaml.ScalarNode, "spec", "template", "spec", "containers", containerSelector),
+			kyaml.SetField("resources", resources),
+		)
 	}
 }
