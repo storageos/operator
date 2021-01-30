@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
@@ -591,6 +592,143 @@ mountPropagation: Bidirectional`,
 			str, err := val.String()
 			assert.Nil(t, err)
 			assert.Equal(t, strings.TrimSpace(tc.wantVal), strings.TrimSpace(str))
+		})
+	}
+}
+
+func TestSetDaemonSetContainerResourceFunc(t *testing.T) {
+	testObj, err := yaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
+      - name: someotherapp
+        image: some-image:v1.2.3
+        resources:
+          limits:
+            cpu: 500m
+            memory: 950Mi
+          requests:
+            memory: 700Mi
+`)
+	assert.Nil(t, err)
+
+	cases := []struct {
+		name         string
+		container    string
+		resources    corev1.ResourceRequirements
+		wantLimits   map[string]string
+		wantRequests map[string]string
+	}{
+		{
+			name:      "add new resource",
+			container: "someapp",
+			resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+					corev1.ResourceCPU:    resource.MustParse("800m"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("500Mi"),
+					corev1.ResourceCPU:    resource.MustParse("400m"),
+				},
+			},
+			wantLimits: map[string]string{
+				"cpu":    "800m",
+				"memory": "1Gi",
+			},
+			wantRequests: map[string]string{
+				"cpu":    "400m",
+				"memory": "500Mi",
+			},
+		},
+		{
+			name:      "overwrite existing resources",
+			container: "someotherapp",
+			resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("900m"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("900Mi"),
+				},
+			},
+			wantLimits: map[string]string{
+				"cpu":    "900m",
+				"memory": "950Mi",
+			},
+			wantRequests: map[string]string{
+				"memory": "900Mi",
+			},
+		},
+		{
+			name:      "set limits only",
+			container: "someotherapp",
+			resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("925Mi"),
+				},
+			},
+			wantLimits: map[string]string{
+				"cpu":    "500m",
+				"memory": "925Mi",
+			},
+			wantRequests: map[string]string{
+				"memory": "700Mi",
+			},
+		},
+		{
+			name:      "set requests only",
+			container: "someotherapp",
+			resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("925Mi"),
+				},
+			},
+			wantLimits: map[string]string{
+				"cpu":    "500m",
+				"memory": "950Mi",
+			},
+			wantRequests: map[string]string{
+				"memory": "925Mi",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy of the object.
+			obj := testObj.Copy()
+
+			tf := SetDaemonSetContainerResourceFunc(tc.container, tc.resources)
+			err = tf(obj)
+			assert.Nil(t, err)
+
+			// Query and check the values.
+			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
+
+			for key, val := range tc.wantLimits {
+				gotLimits, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "limits", key))
+				assert.Nil(t, err)
+				gotStr, err := gotLimits.String()
+				assert.Nil(t, err)
+				assert.Equal(t, val, strings.TrimSpace(gotStr))
+			}
+
+			for key, val := range tc.wantRequests {
+				gotLimits, err := obj.Pipe(yaml.Lookup("spec", "template", "spec", "containers", containerSelector, "resources", "requests", key))
+				assert.Nil(t, err)
+				gotStr, err := gotLimits.String()
+				assert.Nil(t, err)
+				assert.Equal(t, val, strings.TrimSpace(gotStr))
+			}
 		})
 	}
 }

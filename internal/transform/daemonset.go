@@ -149,3 +149,40 @@ func SetDaemonSetVolumeMountFunc(container, volName, mountPath string, mountProp
 		return nil
 	}
 }
+
+// SetDaemonSetContainerResourceFunc sets the resource requirements of a
+// container in a DaemonSet.
+func SetDaemonSetContainerResourceFunc(container string, resReq corev1.ResourceRequirements) transform.TransformFunc {
+	return func(obj *yaml.RNode) error {
+		// Create selectors.
+		containerSelector := fmt.Sprintf("[name=%s]", container)
+
+		// Add resource limits if provided.
+		if len(resReq.Limits) > 0 {
+			for key, val := range resReq.Limits {
+				err := obj.PipeE(
+					yaml.LookupCreate(yaml.MappingNode, "spec", "template", "spec", "containers", containerSelector, "resources", "limits"),
+					yaml.SetField(key.String(), yaml.NewScalarRNode(val.String())),
+				)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// Add resource requests if provided.
+		if len(resReq.Requests) > 0 {
+			for key, val := range resReq.Requests {
+				err := obj.PipeE(
+					yaml.LookupCreate(yaml.MappingNode, "spec", "template", "spec", "containers", containerSelector, "resources", "requests"),
+					yaml.SetField(key.String(), yaml.NewScalarRNode(val.String())),
+				)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+}
