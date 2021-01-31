@@ -12,6 +12,7 @@ import (
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
 	"go.opentelemetry.io/otel"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -28,6 +29,9 @@ const (
 
 	// storageosContainer is the name of the storageos container.
 	storageosContainer = "storageos"
+
+	// storageosService is the default name of the storageos service.
+	storageosService = "storageos"
 
 	// Etcd TLS cert file names.
 	tlsEtcdCA         = "etcd-client-ca.crt"
@@ -73,6 +77,8 @@ func (c *NodeOperand) Ensure(ctx context.Context, obj client.Object, ownerRef me
 		return nil, err
 	}
 
+	// TODO: Apply only at creation. Subsequent updates should only update
+	// individual properties.
 	return nil, b.Apply(ctx)
 }
 
@@ -174,10 +180,52 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		configmapTransforms = append(configmapTransforms, stransform.SetConfigMapData("DEVICE_DIR", cluster.GetSharedDir()))
 	}
 
+	// If node selector terms are provided, append the node selectors.
+	if len(cluster.Spec.NodeSelectorTerms) > 0 {
+		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetNodeSelectorTermsFunc(cluster.Spec.NodeSelectorTerms))
+	}
+
+	// If tolerations are provided, append the tolerations.
+	if cluster.Spec.Tolerations != nil {
+		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetTolerationFunc(cluster.Spec.Tolerations))
+	}
+
+	// If any resources are defined, set container resource requirements.
+	if cluster.Spec.Resources.Limits != nil || cluster.Spec.Resources.Requests != nil {
+		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetContainerResourceFunc(storageosContainer, cluster.Spec.Resources))
+	}
+
+	// Create service transforms.
+	serviceTransforms := []transform.TransformFunc{}
+	serviceName := storageosService
+
+	// If a service name is provided, set the service names.
+	if cluster.Spec.Service.Name != "" {
+		serviceName = cluster.Spec.Service.Name
+		serviceTransforms = append(
+			serviceTransforms,
+			stransform.SetServiceNameFunc(serviceName),
+			stransform.SetDefaultServicePortNameFunc(serviceName),
+		)
+	}
+	if cluster.Spec.Service.Type != "" {
+		serviceTransforms = append(serviceTransforms, stransform.SetServiceTypeFunc(corev1.ServiceType(cluster.Spec.Service.Type)))
+	}
+	if cluster.Spec.Service.InternalPort != 0 {
+		serviceTransforms = append(serviceTransforms, stransform.SetServiceInternalPortFunc(serviceName, cluster.Spec.Service.InternalPort))
+	}
+	if cluster.Spec.Service.ExternalPort != 0 {
+		serviceTransforms = append(serviceTransforms, stransform.SetServiceExternalPortFunc(serviceName, cluster.Spec.Service.ExternalPort))
+	}
+	if len(cluster.Spec.Service.Annotations) > 0 {
+		serviceTransforms = append(serviceTransforms, transform.AddAnnotationsFunc(cluster.Spec.Service.Annotations))
+	}
+
 	return declarative.NewBuilder(nodePackage, fs,
 		declarative.WithManifestTransform(transform.ManifestTransform{
 			"node/daemonset.yaml": daemonsetTransforms,
 			"node/configmap.yaml": configmapTransforms,
+			"node/service.yaml":   serviceTransforms,
 		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
