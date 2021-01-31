@@ -786,3 +786,95 @@ spec:
 		})
 	}
 }
+
+func TestSetDaemonSetNodeSelectorTermsFunc(t *testing.T) {
+	testObj, err := kyaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
+      - name: someotherapp
+        image: some-image:v1.2.3
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: somekey
+                    operator: In
+                    values:
+                      - someval
+`)
+	assert.Nil(t, err)
+
+	cases := []struct {
+		name              string
+		nodeSelectorTerms []corev1.NodeSelectorTerm
+		wantNodeAffinity  string
+	}{
+		{
+			name: "add new selector",
+			nodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"baz"},
+						},
+					},
+				},
+				{
+					MatchFields: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "baz",
+							Operator: corev1.NodeSelectorOpExists,
+						},
+					},
+				},
+			},
+			wantNodeAffinity: `
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: somekey
+            operator: In
+            values:
+              - someval
+      - matchExpressions:
+          - key: foo
+            operator: In
+            values:
+              - baz
+      - matchFields:
+          - key: baz
+            operator: Exists`,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy of the object.
+			obj := testObj.Copy()
+
+			tf := SetDaemonSetNodeSelectorTermsFunc(tc.nodeSelectorTerms)
+			err = tf(obj)
+			assert.Nil(t, err)
+
+			// Query and check the result.
+			gotAffinity, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "affinity"))
+			assert.Nil(t, err)
+			gotStr, err := gotAffinity.String()
+			assert.Nil(t, err)
+			assert.Equal(t, strings.TrimSpace(tc.wantNodeAffinity), strings.TrimSpace(gotStr))
+		})
+	}
+}

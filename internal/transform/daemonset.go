@@ -219,3 +219,26 @@ func SetDaemonSetTolerationFunc(tolerations []corev1.Toleration) transform.Trans
 		)
 	}
 }
+
+// SetDaemonSetNodeSelectorTermsFunc sets the node selector terms for node
+// affinity in a DaemonSet.
+func SetDaemonSetNodeSelectorTermsFunc(nodeSelectors []corev1.NodeSelectorTerm) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Convert go typed resource to yaml.
+		selectorList, err := yaml.Marshal(nodeSelectors)
+		if err != nil {
+			return err
+		}
+
+		// Parse the yaml node selector terms to create an RNode.
+		selectors, err := kyaml.Parse(string(selectorList))
+		if err != nil {
+			return err
+		}
+
+		return obj.PipeE(
+			kyaml.LookupCreate(kyaml.SequenceNode, "spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"),
+			kyaml.Append(selectors.YNode().Content...),
+		)
+	}
+}
