@@ -168,7 +168,7 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	// configuration.
 	if cluster.Spec.SharedDir != "" {
 		// Add shared device volume transform.
-		sharedDeviceVolTF, err := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, "")
+		sharedDeviceVolTF, err := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, nil)
 		if err != nil {
 			return nil, err
 		}

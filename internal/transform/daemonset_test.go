@@ -118,8 +118,8 @@ spec:
 			secretKey:  "username",
 			wantVal: `
 secretKeyRef:
-  name: init-secret
-  key: username`,
+  key: username
+  name: init-secret`,
 		},
 		{
 			name:       "overwrite existing env var",
@@ -129,8 +129,8 @@ secretKeyRef:
 			secretKey:  "user",
 			wantVal: `
 secretKeyRef:
-  name: creds
-  key: user`,
+  key: user
+  name: creds`,
 		},
 	}
 
@@ -254,14 +254,14 @@ spec:
 		name     string
 		volume   string
 		path     string
-		pathType string
+		pathType corev1.HostPathType
 		wantVal  string
 	}{
 		{
 			name:     "new volume",
 			volume:   "somedir",
 			path:     "/var/lib/foo",
-			pathType: "Directory",
+			pathType: corev1.HostPathDirectory,
 			wantVal: `
 name: somedir
 hostPath:
@@ -272,7 +272,7 @@ hostPath:
 			name:     "file type",
 			volume:   "somefile",
 			path:     "/xyz",
-			pathType: "File",
+			pathType: corev1.HostPathFile,
 			wantVal: `
 name: somefile
 hostPath:
@@ -283,7 +283,7 @@ hostPath:
 			name:     "overwrite existing volume",
 			volume:   "foo",
 			path:     "/usr/local/bin/foo",
-			pathType: "File",
+			pathType: corev1.HostPathFile,
 			wantVal: `
 name: foo
 hostPath:
@@ -298,7 +298,7 @@ hostPath:
 name: somedir
 hostPath:
   path: /xyz
-  type:
+  type: ""
 `,
 		},
 	}
@@ -309,7 +309,7 @@ hostPath:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf, err := SetDaemonSetHostPathVolumeFunc(tc.volume, tc.path, tc.pathType)
+			tf, err := SetDaemonSetHostPathVolumeFunc(tc.volume, tc.path, &tc.pathType)
 			assert.Nil(t, err)
 			err = tf(obj)
 			assert.Nil(t, err)
@@ -370,10 +370,10 @@ configMap:
 			wantVal: `
 name: foo
 configMap:
-  name: foo-config
   items:
     - key: somekey
-      path: /somepath/`,
+      path: /somepath/
+  name: foo-config`,
 		},
 		{
 			name:          "with items",
@@ -386,12 +386,12 @@ configMap:
 			wantVal: `
 name: some-config-vol
 configMap:
-  name: some-config
   items:
     - key: key1
       path: /some/path1
     - key: key2
-      path: /some/path2`,
+      path: /some/path2
+  name: some-config`,
 		},
 	}
 
@@ -462,10 +462,10 @@ secret:
 			wantVal: `
 name: foo
 secret:
-  secretName: foo-secret
   items:
     - key: somekey
-      path: /somepath/`,
+      path: /somepath/
+  secretName: foo-secret`,
 		},
 		{
 			name:       "with items",
@@ -478,12 +478,12 @@ secret:
 			wantVal: `
 name: some-secret-vol
 secret:
-  secretName: some-secret
   items:
     - key: key1
       path: /some/path1
     - key: key2
-      path: /some/path2`,
+      path: /some/path2
+  secretName: some-secret`,
 		},
 	}
 
