@@ -7,6 +7,10 @@ import (
 )
 
 const (
+	// Container types.
+	containerTypeMain = "containers"
+	containerTypeInit = "initContainers"
+
 	// Field names of the environment variables.
 	envVarValue     = "value"
 	envVarValueFrom = "valueFrom"

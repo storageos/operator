@@ -62,7 +62,7 @@ spec:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetEnvVarStringFunc(tc.container, tc.key, tc.val)
+			tf := SetDaemonSetContainerEnvVarStringFunc(tc.container, tc.key, tc.val)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -139,7 +139,7 @@ secretKeyRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf := SetDaemonSetEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
+			tf := SetDaemonSetContainerEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -212,7 +212,7 @@ fieldRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf := SetDaemonSetEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
+			tf := SetDaemonSetContainerEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
 			err = tf(obj)
 			assert.Nil(t, err)
 

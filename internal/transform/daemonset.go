@@ -8,47 +8,53 @@ import (
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-// SetDaemonSetEnvVarFunc sets the environment variable in a DaemonSet
-// container for the given key and value field.
-func SetDaemonSetEnvVarFunc(container string, key string, valField string, value *kyaml.RNode) transform.TransformFunc {
+// getDaemonSetEnvVarPath constructs path to an env var in a DaemonSet.
+func getDaemonSetEnvVarPath(containerType, container, key string) []string {
 	containerSelector := fmt.Sprintf("[name=%s]", container)
 	envVarSelector := fmt.Sprintf("[name=%s]", key)
-	path := []string{"spec", "template", "spec", "containers", containerSelector, "env", envVarSelector}
-	return SetScalarNodeFunc(valField, value, path...)
+	return []string{"spec", "template", "spec", containerType, containerSelector, "env", envVarSelector}
 }
 
-// SetDaemonSetEnvVarStringFunc sets a string value environment variable for a
-// given container in a DaemonSet.
-func SetDaemonSetEnvVarStringFunc(container, key, val string) transform.TransformFunc {
-	return SetDaemonSetEnvVarFunc(container, key, envVarValue, kyaml.NewScalarRNode(val))
+// SetDaemonSetContainerEnvVarStringFunc sets a string value env var for a
+// container.
+func SetDaemonSetContainerEnvVarStringFunc(container, key, val string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeMain, container, key)
+	return SetEnvVarStringFunc(val, path...)
 }
 
-// SetDaemonSetEnvVarValueFromSecretFunc sets a valueFrom secretKeyRef
-// environment variable for a given container in a DaemonSet.
-func SetDaemonSetEnvVarValueFromSecretFunc(container, key, secretName, secretKey string) transform.TransformFunc {
-	return func(obj *kyaml.RNode) error {
-		// Construct secret env var source RNode.
-		envVarSrc, err := createSecretEnvVarSource(secretName, secretKey)
-		if err != nil {
-			return err
-		}
-		tf := SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc)
-		return tf(obj)
-	}
+// SetDaemonSetContainerEnvVarValueFromSecretFunc sets a valueFrom secretKeyRef
+// env var for a container.
+func SetDaemonSetContainerEnvVarValueFromSecretFunc(container, key, secretName, secretKey string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeMain, container, key)
+	return SetEnvVarValueFromSecretFunc(secretName, secretKey, path...)
 }
 
-// SetDaemonSetEnvVarValueFromFieldFunc sets a valueFrom fieldRef environment
-// variable for a given container in a DaemonSet.
-func SetDaemonSetEnvVarValueFromFieldFunc(container, key, fieldPath string) transform.TransformFunc {
-	return func(obj *kyaml.RNode) error {
-		// Construct env var source from field ref RNode.
-		envVarSrc, err := createValueFromFieldEnvVarSource(fieldPath)
-		if err != nil {
-			return err
-		}
-		tf := SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc)
-		return tf(obj)
-	}
+// SetDaemonSetContainerEnvVarValueFromFieldFunc sets a valueFrom fieldRef env
+// var for a container.
+func SetDaemonSetContainerEnvVarValueFromFieldFunc(container, key, fieldPath string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeMain, container, key)
+	return SetEnvVarValueFromFieldFunc(fieldPath, path...)
+}
+
+// SetDaemonSetInitContainerEnvVarStringFunc sets a string value env var for an
+// init container.
+func SetDaemonSetInitContainerEnvVarStringFunc(container, key, val string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeInit, container, key)
+	return SetEnvVarStringFunc(val, path...)
+}
+
+// SetDaemonSetInitContainerEnvVarValueFromSecretFunc sets a valueFrom
+// secretKeyRef env var for an init container.
+func SetDaemonSetInitContainerEnvVarValueFromSecretFunc(container, key, secretName, secretKey string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeInit, container, key)
+	return SetEnvVarValueFromSecretFunc(secretName, secretKey, path...)
+}
+
+// SetDaemonSetInitContainerEnvVarValueFromFieldFunc sets a valueFrom fieldRef
+// env var for an init container.
+func SetDaemonSetInitContainerEnvVarValueFromFieldFunc(container, key, fieldPath string) transform.TransformFunc {
+	path := getDaemonSetEnvVarPath(containerTypeInit, container, key)
+	return SetEnvVarValueFromFieldFunc(fieldPath, path...)
 }
 
 // SetDaemonSetVolumeFunc sets a volume in a DaemonSet for the given name and

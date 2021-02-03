@@ -30,6 +30,9 @@ const (
 	// storageosContainer is the name of the storageos container.
 	storageosContainer = "storageos"
 
+	// initContainer is the name of the storageos init container.
+	initContainer = "storageos-init"
+
 	// storageosService is the default name of the storageos service.
 	storageosService = "storageos"
 
@@ -117,9 +120,13 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	daemonsetTransforms := []transform.TransformFunc{}
 
 	// Create transforms for setting bootstrap credentials.
-	usernameTF := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
-	passwordTF := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
-	daemonsetTransforms = append(daemonsetTransforms, usernameTF, passwordTF)
+	usernameTF := stransform.SetDaemonSetContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
+	passwordTF := stransform.SetDaemonSetContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
+
+	// Set the init container env var.
+	initNamespaceTF := stransform.SetDaemonSetInitContainerEnvVarStringFunc(initContainer, "DAEMONSET_NAMESPACE", cluster.GetNamespace())
+
+	daemonsetTransforms = append(daemonsetTransforms, usernameTF, passwordTF, initNamespaceTF)
 
 	// Create configmap transforms.
 	configmapTransforms := []transform.TransformFunc{
