@@ -117,14 +117,8 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	daemonsetTransforms := []transform.TransformFunc{}
 
 	// Create transforms for setting bootstrap credentials.
-	usernameTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
-	if err != nil {
-		return nil, err
-	}
-	passwordTF, err := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
-	if err != nil {
-		return nil, err
-	}
+	usernameTF := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
+	passwordTF := stransform.SetDaemonSetEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
 	daemonsetTransforms = append(daemonsetTransforms, usernameTF, passwordTF)
 
 	// Create configmap transforms.
@@ -143,10 +137,8 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	// etcd related configurations.
 	if cluster.Spec.TLSEtcdSecretRefName != "" {
 		// Add etcd secret volume transform.
-		etcdSecretVolTF, err := stransform.SetDaemonSetSecretVolumeFunc("etcd-certs", cluster.Spec.TLSEtcdSecretRefName, nil)
-		if err != nil {
-			return nil, err
-		}
+		etcdSecretVolTF := stransform.SetDaemonSetSecretVolumeFunc("etcd-certs", cluster.Spec.TLSEtcdSecretRefName, nil)
+
 		// Add etcd secret volume mount transform.
 		etcdSecretVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, tlsEtcdCertsVolume, tlsEtcdRootPath, "")
 		daemonsetTransforms = append(daemonsetTransforms, etcdSecretVolTF, etcdSecretVolMountTF)
@@ -168,10 +160,8 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	// configuration.
 	if cluster.Spec.SharedDir != "" {
 		// Add shared device volume transform.
-		sharedDeviceVolTF, err := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, nil)
-		if err != nil {
-			return nil, err
-		}
+		sharedDeviceVolTF := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, nil)
+
 		// Add shared device volumemount transform.
 		sharedDeviceVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, sharedDirVolume, cluster.Spec.SharedDir, "")
 		daemonsetTransforms = append(daemonsetTransforms, sharedDeviceVolTF, sharedDeviceVolMountTF)

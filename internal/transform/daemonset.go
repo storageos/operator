@@ -25,24 +25,30 @@ func SetDaemonSetEnvVarStringFunc(container, key, val string) transform.Transfor
 
 // SetDaemonSetEnvVarValueFromSecretFunc sets a valueFrom secretKeyRef
 // environment variable for a given container in a DaemonSet.
-func SetDaemonSetEnvVarValueFromSecretFunc(container, key, secretName, secretKey string) (transform.TransformFunc, error) {
-	// Construct secret env var source RNode.
-	envVarSrc, err := createSecretEnvVarSource(secretName, secretKey)
-	if err != nil {
-		return nil, err
+func SetDaemonSetEnvVarValueFromSecretFunc(container, key, secretName, secretKey string) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Construct secret env var source RNode.
+		envVarSrc, err := createSecretEnvVarSource(secretName, secretKey)
+		if err != nil {
+			return err
+		}
+		tf := SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc)
+		return tf(obj)
 	}
-	return SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc), nil
 }
 
 // SetDaemonSetEnvVarValueFromFieldFunc sets a valueFrom fieldRef environment
 // variable for a given container in a DaemonSet.
-func SetDaemonSetEnvVarValueFromFieldFunc(container, key, fieldPath string) (transform.TransformFunc, error) {
-	// Construct env var source from field ref RNode.
-	envVarSrc, err := createValueFromFieldEnvVarSource(fieldPath)
-	if err != nil {
-		return nil, err
+func SetDaemonSetEnvVarValueFromFieldFunc(container, key, fieldPath string) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Construct env var source from field ref RNode.
+		envVarSrc, err := createValueFromFieldEnvVarSource(fieldPath)
+		if err != nil {
+			return err
+		}
+		tf := SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc)
+		return tf(obj)
 	}
-	return SetDaemonSetEnvVarFunc(container, key, envVarValueFrom, envVarSrc), nil
 }
 
 // SetDaemonSetVolumeFunc sets a volume in a DaemonSet for the given name and
@@ -55,35 +61,44 @@ func SetDaemonSetVolumeFunc(volume string, volumeSource string, value *kyaml.RNo
 
 // SetDaemonSetHostPathVolumeFunc sets a volume in a DaemonSet for a host path
 // volume source.
-func SetDaemonSetHostPathVolumeFunc(volume, path string, pathType *corev1.HostPathType) (transform.TransformFunc, error) {
-	// Construct the hostpath volume source RNode.
-	hostPath, err := createHostPathVolumeSource(path, pathType)
-	if err != nil {
-		return nil, err
+func SetDaemonSetHostPathVolumeFunc(volume, path string, pathType *corev1.HostPathType) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Construct the hostpath volume source RNode.
+		hostPath, err := createHostPathVolumeSource(path, pathType)
+		if err != nil {
+			return err
+		}
+		tf := SetDaemonSetVolumeFunc(volume, volSrcHostPath, hostPath)
+		return tf(obj)
 	}
-	return SetDaemonSetVolumeFunc(volume, volSrcHostPath, hostPath), nil
 }
 
 // SetDaemonSetConfigMapVolumeFunc sets a volume in a DaemonSet for a configmap
 // volume source.
-func SetDaemonSetConfigMapVolumeFunc(volume string, configmapName string, keyToPaths []corev1.KeyToPath) (transform.TransformFunc, error) {
-	// Construct the configmap volume source RNode.
-	configMap, err := createConfigMapVolumeSource(configmapName, keyToPaths)
-	if err != nil {
-		return nil, err
+func SetDaemonSetConfigMapVolumeFunc(volume string, configmapName string, keyToPaths []corev1.KeyToPath) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Construct the configmap volume source RNode.
+		configMap, err := createConfigMapVolumeSource(configmapName, keyToPaths)
+		if err != nil {
+			return err
+		}
+		tf := SetDaemonSetVolumeFunc(volume, volSrcConfigMap, configMap)
+		return tf(obj)
 	}
-	return SetDaemonSetVolumeFunc(volume, volSrcConfigMap, configMap), nil
 }
 
 // SetDaemonSetSecretVolumeFunc sets a volume in a DaemonSet for a secret
 // volume source.
-func SetDaemonSetSecretVolumeFunc(volume string, secretName string, keyToPaths []corev1.KeyToPath) (transform.TransformFunc, error) {
-	// Construct the secret volume source.
-	secret, err := createSecretVolumeSource(secretName, keyToPaths)
-	if err != nil {
-		return nil, err
+func SetDaemonSetSecretVolumeFunc(volume string, secretName string, keyToPaths []corev1.KeyToPath) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		// Construct the secret volume source.
+		secret, err := createSecretVolumeSource(secretName, keyToPaths)
+		if err != nil {
+			return err
+		}
+		tf := SetDaemonSetVolumeFunc(volume, volSrcSecret, secret)
+		return tf(obj)
 	}
-	return SetDaemonSetVolumeFunc(volume, volSrcSecret, secret), nil
 }
 
 // SetDaemonSetVolumeMountFunc sets a volumeMount for a given container in a

@@ -139,8 +139,7 @@ secretKeyRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf, err := SetDaemonSetEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
-			assert.Nil(t, err)
+			tf := SetDaemonSetEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -213,8 +212,7 @@ fieldRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf, err := SetDaemonSetEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
-			assert.Nil(t, err)
+			tf := SetDaemonSetEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -309,8 +307,7 @@ hostPath:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf, err := SetDaemonSetHostPathVolumeFunc(tc.volume, tc.path, &tc.pathType)
-			assert.Nil(t, err)
+			tf := SetDaemonSetHostPathVolumeFunc(tc.volume, tc.path, &tc.pathType)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -401,8 +398,7 @@ configMap:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf, err := SetDaemonSetConfigMapVolumeFunc(tc.volume, tc.configMapName, tc.keyToPaths)
-			assert.Nil(t, err)
+			tf := SetDaemonSetConfigMapVolumeFunc(tc.volume, tc.configMapName, tc.keyToPaths)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -493,8 +489,7 @@ secret:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf, err := SetDaemonSetSecretVolumeFunc(tc.volume, tc.secretName, tc.keyToPaths)
-			assert.Nil(t, err)
+			tf := SetDaemonSetSecretVolumeFunc(tc.volume, tc.secretName, tc.keyToPaths)
 			err = tf(obj)
 			assert.Nil(t, err)
 
