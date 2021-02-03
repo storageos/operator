@@ -185,10 +185,13 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetNodeSelectorTermsFunc(cluster.Spec.NodeSelectorTerms))
 	}
 
+	// Add the default tolerations.
+	tolerations := getDefaultTolerations()
 	// If tolerations are provided, append the tolerations.
 	if cluster.Spec.Tolerations != nil {
-		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetTolerationFunc(cluster.Spec.Tolerations))
+		tolerations = append(tolerations, cluster.Spec.Tolerations...)
 	}
+	daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetTolerationFunc(tolerations))
 
 	// If any resources are defined, set container resource requirements.
 	if cluster.Spec.Resources.Limits != nil || cluster.Spec.Resources.Requests != nil {

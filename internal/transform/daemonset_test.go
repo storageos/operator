@@ -712,6 +712,20 @@ spec:
       containers:
       - name: someapp
         image: someapp:v1.5
+`)
+	assert.Nil(t, err)
+
+	testObjWithTolerations, err := kyaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
       - name: someotherapp
         image: some-image:v1.2.3
       tolerations:
@@ -722,12 +736,32 @@ spec:
 
 	cases := []struct {
 		name            string
+		object          *kyaml.RNode
 		tolerations     []corev1.Toleration
 		wantTolerations string
 		wantErr         bool
 	}{
 		{
-			name: "add new tolerations",
+			name:   "add tolerations",
+			object: testObj,
+			tolerations: []corev1.Toleration{
+				{
+					Key:      "some-toleration",
+					Operator: corev1.TolerationOpEqual,
+					Value:    "foo",
+					Effect:   corev1.TaintEffectNoExecute,
+				},
+			},
+			wantTolerations: `
+- effect: NoExecute
+  key: some-toleration
+  operator: Equal
+  value: foo
+`,
+		},
+		{
+			name:   "overwrite tolerations",
+			object: testObjWithTolerations,
 			tolerations: []corev1.Toleration{
 				{
 					Key:      "some-toleration",
@@ -741,8 +775,6 @@ spec:
 				},
 			},
 			wantTolerations: `
-- key: some-xyz
-  operator: Exists
 - effect: NoExecute
   key: some-toleration
   operator: Equal
@@ -751,7 +783,8 @@ spec:
   operator: Exists`,
 		},
 		{
-			name: "invalid value",
+			name:   "invalid value",
+			object: testObj,
 			tolerations: []corev1.Toleration{
 				{
 					Key:      "some-toleration",
@@ -767,7 +800,7 @@ spec:
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
-			obj := testObj.Copy()
+			obj := tc.object.Copy()
 
 			tf := SetDaemonSetTolerationFunc(tc.tolerations)
 			err = tf(obj)
@@ -799,6 +832,20 @@ spec:
       containers:
       - name: someapp
         image: someapp:v1.5
+`)
+	assert.Nil(t, err)
+
+	testObjWithAffinity, err := kyaml.Parse(`
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: some-daemonset
+spec:
+  template:
+    spec:
+      containers:
+      - name: someapp
+        image: someapp:v1.5
       - name: someotherapp
         image: some-image:v1.2.3
       affinity:
@@ -809,17 +856,43 @@ spec:
                   - key: somekey
                     operator: In
                     values:
-                      - someval
+                    - someval
 `)
 	assert.Nil(t, err)
 
 	cases := []struct {
 		name              string
+		object            *kyaml.RNode
 		nodeSelectorTerms []corev1.NodeSelectorTerm
 		wantNodeAffinity  string
 	}{
 		{
-			name: "add new selector",
+			name:   "add selector",
+			object: testObj,
+			nodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"baz"},
+						},
+					},
+				},
+			},
+			wantNodeAffinity: `
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: foo
+            operator: In
+            values:
+              - baz`,
+		},
+		{
+			name:   "overwrite selector",
+			object: testObjWithAffinity,
 			nodeSelectorTerms: []corev1.NodeSelectorTerm{
 				{
 					MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -844,11 +917,6 @@ nodeAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
     nodeSelectorTerms:
       - matchExpressions:
-          - key: somekey
-            operator: In
-            values:
-              - someval
-      - matchExpressions:
           - key: foo
             operator: In
             values:
@@ -863,7 +931,7 @@ nodeAffinity:
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
-			obj := testObj.Copy()
+			obj := tc.object.Copy()
 
 			tf := SetDaemonSetNodeSelectorTermsFunc(tc.nodeSelectorTerms)
 			err = tf(obj)

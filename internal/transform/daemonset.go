@@ -214,8 +214,8 @@ func SetDaemonSetTolerationFunc(tolerations []corev1.Toleration) transform.Trans
 		}
 
 		return obj.PipeE(
-			kyaml.LookupCreate(kyaml.MappingNode, "spec", "template", "spec", "tolerations"),
-			kyaml.Append(tols.YNode().Content...),
+			kyaml.LookupCreate(kyaml.MappingNode, "spec", "template", "spec"),
+			kyaml.SetField("tolerations", tols),
 		)
 	}
 }
@@ -224,21 +224,32 @@ func SetDaemonSetTolerationFunc(tolerations []corev1.Toleration) transform.Trans
 // affinity in a DaemonSet.
 func SetDaemonSetNodeSelectorTermsFunc(nodeSelectors []corev1.NodeSelectorTerm) transform.TransformFunc {
 	return func(obj *kyaml.RNode) error {
+		// Create a node selector from the node selector terms.
+		// NOTE: Since requiredDuringSchedulingIgnoredDuringExecution accepts a
+		// pointer to a NodeSelector, creating a NodeSelector with the given
+		// selector terms and assigning the NodeSelector term works better over
+		// trying to set field "nodeSelector" in
+		// requiredDuringSchedulingIgnoredDuringExecution.
+		nodeSelector := corev1.NodeSelector{
+			NodeSelectorTerms: nodeSelectors,
+		}
+
 		// Convert go typed resource to yaml.
-		selectorList, err := yaml.Marshal(nodeSelectors)
+		// selectorList, err := yaml.Marshal(nodeSelectors)
+		selector, err := yaml.Marshal(nodeSelector)
 		if err != nil {
 			return err
 		}
 
 		// Parse the yaml node selector terms to create an RNode.
-		selectors, err := kyaml.Parse(string(selectorList))
+		sel, err := kyaml.Parse(string(selector))
 		if err != nil {
 			return err
 		}
 
 		return obj.PipeE(
-			kyaml.LookupCreate(kyaml.SequenceNode, "spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"),
-			kyaml.Append(selectors.YNode().Content...),
+			kyaml.LookupCreate(kyaml.MappingNode, "spec", "template", "spec", "affinity", "nodeAffinity"),
+			kyaml.SetField("requiredDuringSchedulingIgnoredDuringExecution", sel),
 		)
 	}
 }
