@@ -3,7 +3,7 @@ module github.com/storageos/operator
 go 1.15
 
 require (
-	github.com/darkowlzz/operator-toolkit v0.0.0-20210124142727-7e61ee4cb18e
+	github.com/darkowlzz/operator-toolkit v0.0.0-20210204200633-5276701a5724
 	github.com/go-logr/logr v0.3.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2

@@ -43,9 +43,8 @@ func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Initialize the reconciler.
-	err = r.CompositeReconciler.Init(mgr, &storageoscomv1.StorageOSCluster{},
+	err = r.CompositeReconciler.Init(mgr, cc, &storageoscomv1.StorageOSCluster{},
 		compositev1.WithName("storageoscluster-controller"),
-		compositev1.WithController(cc),
 		compositev1.WithCleanupStrategy(compositev1.FinalizerCleanup),
 		compositev1.WithInitCondition(compositev1.DefaultInitCondition),
 		compositev1.WithLogger(r.Log),
