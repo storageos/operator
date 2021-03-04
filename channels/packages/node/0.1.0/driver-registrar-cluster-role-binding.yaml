@@ -9,5 +9,3 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: storageos-daemonset-sa
-  # NOTE: Find out how to make this namespace reference dynamic.
-  namespace: default

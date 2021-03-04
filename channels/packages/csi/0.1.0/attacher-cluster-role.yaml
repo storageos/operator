@@ -2,8 +2,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: storageos:csi-attacher
-  labels:
-    app: storageos
 rules:
 - apiGroups:
   - ""

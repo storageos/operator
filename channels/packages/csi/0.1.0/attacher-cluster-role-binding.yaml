@@ -1,8 +1,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  labels:
-    app: storageos
   name: storageos:csi-attacher
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -11,5 +9,3 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: storageos-csi-helper-sa
-  # NOTE: Find out how to make this namespace reference dynamic.
-  namespace: default

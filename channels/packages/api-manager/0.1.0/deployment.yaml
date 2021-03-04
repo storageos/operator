@@ -1,9 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: storageos
-    app.kubernetes.io/service-for: storageos-api-server
   name: storageos-api-manager
   namespace: kube-system
 spec:
