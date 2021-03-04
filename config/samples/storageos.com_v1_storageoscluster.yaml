@@ -7,4 +7,5 @@ spec:
   secretRefName: storageos-api
   disableTelemetry: true
   kvBackend:
-    address: "http://etcd-client:2379"
+    address: "etcd-client:2379"
+    # address: "etcd-client.default.svc.cluster.local:2379"

@@ -103,6 +103,7 @@ spec:
         - mountPath: /csi
           name: plugin-dir
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       hostPID: true
       initContainers:
       - env:
@@ -133,7 +134,7 @@ spec:
         - mountPath: /var/lib/storageos
           mountPropagation: Bidirectional
           name: state
-      priorityClassName: system-node-critical
+      # priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccount: storageos-daemonset-sa
       serviceAccountName: storageos-daemonset-sa

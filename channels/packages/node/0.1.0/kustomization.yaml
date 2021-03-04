@@ -18,7 +18,7 @@ images:
     newTag: v2.1.0
   - name: storageos-node
     newName: storageos/node
-    newTag: v2.3.1
+    newTag: v2.3.3
   - name: csi-node-driver-registrar
     newName: quay.io/k8scsi/csi-node-driver-registrar
     newTag: v1.2.0
