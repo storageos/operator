@@ -1,8 +1,14 @@
 package storageoscluster
 
 import (
+	"errors"
+
 	corev1 "k8s.io/api/core/v1"
 )
+
+// noResourceErr is used when an operand's resource builder can't create the
+// resource because it's not enabled in the custom resource.
+var noResourceErr = errors.New("no resource")
 
 const (
 	// TaintNodeOutOfDisk will be added when node runs out of disk space, and

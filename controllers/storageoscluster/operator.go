@@ -10,19 +10,22 @@ import (
 	"sigs.k8s.io/kustomize/api/filesys"
 )
 
+var log = ctrl.Log.WithName("cluster-controller")
+
 const (
 	apiManagerOpName = "api-manager-operand"
 	csiOpName        = "csi-operand"
 	schedulerOpName  = "scheduler-operand"
 	nodeOpName       = "node-operand"
+	storageclassName = "storageclass-operand"
 )
 
 func NewOperator(mgr ctrl.Manager, fs filesys.FileSystem, execStrategy executor.ExecutionStrategy) (*operatorv1.CompositeOperator, error) {
 	// Create operands with their relationships.
 	//
-	//          +----+         +---------+
-	//       +--+Node+----+    |Scheduler|
-	//       |  +----+    |    +---------+
+	//          +----+         +---------+  +------------+
+	//       +--+Node+----+    |Scheduler|  |StorageClass|
+	//       |  +----+    |    +---------+  +------------+
 	//       |            |
 	//       |            |
 	//       v            v
@@ -36,12 +39,13 @@ func NewOperator(mgr ctrl.Manager, fs filesys.FileSystem, execStrategy executor.
 	csiOp := NewCSIOperand(csiOpName, mgr.GetClient(), []string{nodeOpName}, operand.RequeueOnError, fs)
 	schedulerOp := NewSchedulerOperand(schedulerOpName, mgr.GetClient(), []string{}, operand.RequeueOnError, fs)
 	nodeOp := NewNodeOperand(nodeOpName, mgr.GetClient(), []string{}, operand.RequeueOnError, fs)
+	storageClassOp := NewStorageClassOperand(storageclassName, mgr.GetClient(), []string{}, operand.RequeueOnError, fs)
 
 	// Create and return CompositeOperator.
 	return operatorv1.NewCompositeOperator(
 		operatorv1.WithEventRecorder(mgr.GetEventRecorderFor("storageoscluster-controller")),
 		operatorv1.WithExecutionStrategy(execStrategy),
-		operatorv1.WithOperands(apiManagerOp, csiOp, schedulerOp, nodeOp),
+		operatorv1.WithOperands(apiManagerOp, csiOp, schedulerOp, nodeOp, storageClassOp),
 	)
 }
 

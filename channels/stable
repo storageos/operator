@@ -7,3 +7,5 @@ manifests:
   version: 0.1.0
 - name: scheduler
   version: 0.1.0
+- name: storageclass
+  version: 0.1.0

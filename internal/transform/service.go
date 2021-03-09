@@ -9,16 +9,6 @@ import (
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-// SetServiceNameFunc sets the name of a given Service.
-func SetServiceNameFunc(name string) transform.TransformFunc {
-	return func(obj *kyaml.RNode) error {
-		return obj.PipeE(
-			kyaml.LookupCreate(kyaml.ScalarNode, "metadata"),
-			kyaml.SetField("name", kyaml.NewScalarRNode(name)),
-		)
-	}
-}
-
 // SetDefaultServicePortNameFunc sets the default port name of the Service.
 func SetDefaultServicePortNameFunc(name string) transform.TransformFunc {
 	return func(obj *kyaml.RNode) error {

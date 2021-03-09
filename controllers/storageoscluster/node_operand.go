@@ -204,7 +204,7 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 		serviceName = cluster.Spec.Service.Name
 		serviceTransforms = append(
 			serviceTransforms,
-			stransform.SetServiceNameFunc(serviceName),
+			stransform.SetMetadataNameFunc(serviceName),
 			stransform.SetDefaultServicePortNameFunc(serviceName),
 		)
 	}

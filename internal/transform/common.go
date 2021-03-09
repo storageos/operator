@@ -70,6 +70,17 @@ func SetScalarNodeFunc(valField string, value *kyaml.RNode, path ...string) tran
 	}
 }
 
+// SetScalarNodeStringValueFunc sets a scalar node field with the given string
+// value at the given path.
+func SetScalarNodeStringValueFunc(valField string, value string, path ...string) transform.TransformFunc {
+	return SetScalarNodeFunc(valField, kyaml.NewScalarRNode(value), path...)
+}
+
+// SetMetadataNameFunc sets the metadata name of a given resource.
+func SetMetadataNameFunc(name string) transform.TransformFunc {
+	return SetScalarNodeStringValueFunc("name", name, "metadata")
+}
+
 // SetVolumeMountFunc sets the volume mount at a given path.
 func SetVolumeMountFunc(value *kyaml.RNode, mountPropagationValue *kyaml.RNode, path ...string) transform.TransformFunc {
 	return func(obj *kyaml.RNode) error {
