@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast
+parameters:
+  csi.storage.k8s.io/secret-name: storageos-api
+  csi.storage.k8s.io/secret-namespace: default
+  csi.storage.k8s.io/fstype: ext4
+provisioner: csi.storageos.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true

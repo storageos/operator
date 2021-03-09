@@ -1,0 +1,6 @@
+commonLabels:
+  app: storageos
+  app.kubernetes.io/component: storageclass
+
+resources:
+- storageclass.yaml
