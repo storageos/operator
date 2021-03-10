@@ -1,0 +1,5 @@
+commonLabels:
+  app: storageos
+
+resources:
+- priorityclass.yaml

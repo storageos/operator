@@ -9,3 +9,7 @@ manifests:
   version: 0.1.0
 - name: storageclass
   version: 0.1.0
+- name: before-install
+  version: 0.1.0
+- name: after-install
+  version: 0.1.0

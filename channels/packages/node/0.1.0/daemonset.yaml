@@ -134,7 +134,7 @@ spec:
         - mountPath: /var/lib/storageos
           mountPropagation: Bidirectional
           name: state
-      # priorityClassName: system-node-critical
+      priorityClassName: storageos
       restartPolicy: Always
       serviceAccount: storageos-daemonset-sa
       serviceAccountName: storageos-daemonset-sa
