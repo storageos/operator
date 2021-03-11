@@ -6,6 +6,7 @@ import (
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
+	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
 	"go.opentelemetry.io/otel"
@@ -16,6 +17,7 @@ import (
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
 	"github.com/storageos/operator/internal/image"
+	stransform "github.com/storageos/operator/internal/transform"
 )
 
 // apiManagerPackage contains the resource manifests for api-manager operand.
@@ -80,7 +82,18 @@ func getAPIManagerBuilder(fs filesys.FileSystem, obj client.Object) (*declarativ
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 
+	// Create deployment transforms.
+	deploymentTransforms := []transform.TransformFunc{}
+
+	// Add secret volume transform.
+	apiSecretVolTF := stransform.SetPodTemplateSecretVolumeFunc("api-secret", cluster.Spec.SecretRefName, nil)
+
+	deploymentTransforms = append(deploymentTransforms, apiSecretVolTF)
+
 	return declarative.NewBuilder(apiManagerPackage, fs,
+		declarative.WithManifestTransform(transform.ManifestTransform{
+			"api-manager/deployment.yaml": deploymentTransforms,
+		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
