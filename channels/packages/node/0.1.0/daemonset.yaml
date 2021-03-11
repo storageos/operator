@@ -136,7 +136,6 @@ spec:
           name: state
       priorityClassName: storageos
       restartPolicy: Always
-      serviceAccount: storageos-daemonset-sa
       serviceAccountName: storageos-daemonset-sa
       terminationGracePeriodSeconds: 30
       volumes:

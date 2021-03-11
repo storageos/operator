@@ -53,10 +53,8 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-      priorityClassName: system-node-critical
       restartPolicy: Always
       schedulerName: default-scheduler
-      serviceAccount: storageos-csi-helper-sa
       serviceAccountName: storageos-csi-helper-sa
       terminationGracePeriodSeconds: 30
       tolerations:

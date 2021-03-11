@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: storageos-api-manager
-  namespace: kube-system
 spec:
   replicas: 2
   selector:
@@ -33,10 +32,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/storageos/secrets/api
           name: api-secret
-      priorityClassName: system-node-critical
       restartPolicy: Always
       schedulerName: default-scheduler
-      serviceAccount: storageos-api-manager-sa
       serviceAccountName: storageos-api-manager-sa
       terminationGracePeriodSeconds: 30
       tolerations:
