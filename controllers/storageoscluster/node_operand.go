@@ -120,11 +120,11 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	daemonsetTransforms := []transform.TransformFunc{}
 
 	// Create transforms for setting bootstrap credentials.
-	usernameTF := stransform.SetDaemonSetContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
-	passwordTF := stransform.SetDaemonSetContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
+	usernameTF := stransform.SetPodTemplateContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_USERNAME", cluster.Spec.SecretRefName, "username")
+	passwordTF := stransform.SetPodTemplateContainerEnvVarValueFromSecretFunc(storageosContainer, "BOOTSTRAP_PASSWORD", cluster.Spec.SecretRefName, "password")
 
 	// Set the init container env var.
-	initNamespaceTF := stransform.SetDaemonSetInitContainerEnvVarStringFunc(initContainer, "DAEMONSET_NAMESPACE", cluster.GetNamespace())
+	initNamespaceTF := stransform.SetPodTemplateInitContainerEnvVarStringFunc(initContainer, "DAEMONSET_NAMESPACE", cluster.GetNamespace())
 
 	daemonsetTransforms = append(daemonsetTransforms, usernameTF, passwordTF, initNamespaceTF)
 
@@ -144,10 +144,10 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	// etcd related configurations.
 	if cluster.Spec.TLSEtcdSecretRefName != "" {
 		// Add etcd secret volume transform.
-		etcdSecretVolTF := stransform.SetDaemonSetSecretVolumeFunc("etcd-certs", cluster.Spec.TLSEtcdSecretRefName, nil)
+		etcdSecretVolTF := stransform.SetPodTemplateSecretVolumeFunc("etcd-certs", cluster.Spec.TLSEtcdSecretRefName, nil)
 
 		// Add etcd secret volume mount transform.
-		etcdSecretVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, tlsEtcdCertsVolume, tlsEtcdRootPath, "")
+		etcdSecretVolMountTF := stransform.SetPodTemplateVolumeMountFunc(storageosContainer, tlsEtcdCertsVolume, tlsEtcdRootPath, "")
 		daemonsetTransforms = append(daemonsetTransforms, etcdSecretVolTF, etcdSecretVolMountTF)
 
 		// Add etcd secret configuration transforms.
@@ -167,10 +167,10 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	// configuration.
 	if cluster.Spec.SharedDir != "" {
 		// Add shared device volume transform.
-		sharedDeviceVolTF := stransform.SetDaemonSetHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, nil)
+		sharedDeviceVolTF := stransform.SetPodTemplateHostPathVolumeFunc(sharedDirVolume, cluster.Spec.SharedDir, nil)
 
 		// Add shared device volumemount transform.
-		sharedDeviceVolMountTF := stransform.SetDaemonSetVolumeMountFunc(storageosContainer, sharedDirVolume, cluster.Spec.SharedDir, "")
+		sharedDeviceVolMountTF := stransform.SetPodTemplateVolumeMountFunc(storageosContainer, sharedDirVolume, cluster.Spec.SharedDir, "")
 		daemonsetTransforms = append(daemonsetTransforms, sharedDeviceVolTF, sharedDeviceVolMountTF)
 
 		// Add shared device configuration transform.
@@ -179,7 +179,7 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 
 	// If node selector terms are provided, append the node selectors.
 	if len(cluster.Spec.NodeSelectorTerms) > 0 {
-		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetNodeSelectorTermsFunc(cluster.Spec.NodeSelectorTerms))
+		daemonsetTransforms = append(daemonsetTransforms, stransform.SetPodTemplateNodeSelectorTermsFunc(cluster.Spec.NodeSelectorTerms))
 	}
 
 	// Add the default tolerations.
@@ -188,11 +188,11 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 	if cluster.Spec.Tolerations != nil {
 		tolerations = append(tolerations, cluster.Spec.Tolerations...)
 	}
-	daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetTolerationFunc(tolerations))
+	daemonsetTransforms = append(daemonsetTransforms, stransform.SetPodTemplateTolerationFunc(tolerations))
 
 	// If any resources are defined, set container resource requirements.
 	if cluster.Spec.Resources.Limits != nil || cluster.Spec.Resources.Requests != nil {
-		daemonsetTransforms = append(daemonsetTransforms, stransform.SetDaemonSetContainerResourceFunc(storageosContainer, cluster.Spec.Resources))
+		daemonsetTransforms = append(daemonsetTransforms, stransform.SetPodTemplateContainerResourceFunc(storageosContainer, cluster.Spec.Resources))
 	}
 
 	// Create service transforms.

@@ -92,7 +92,7 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 	deploymentTransforms := []transform.TransformFunc{}
 
 	// Add container args.
-	argsTF := stransform.AppendDeploymentContainerArgsFunc(schedulerContainer,
+	argsTF := stransform.AppendPodTemplateContainerArgsFunc(schedulerContainer,
 		[]string{
 			fmt.Sprintf("--policy-configmap-namespace=%s", cluster.Namespace),
 			fmt.Sprintf("--leader-elect-resource-namespace=%s", cluster.Namespace),

@@ -11,7 +11,7 @@ import (
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-func TestSetDaemonSetEnvVarStringFunc(t *testing.T) {
+func TestSetPodTemplateEnvVarStringFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -62,7 +62,7 @@ spec:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetContainerEnvVarStringFunc(tc.container, tc.key, tc.val)
+			tf := SetPodTemplateContainerEnvVarStringFunc(tc.container, tc.key, tc.val)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -79,7 +79,7 @@ spec:
 	}
 }
 
-func TestSetDaemonSetEnvVarValueFromSecretFunc(t *testing.T) {
+func TestSetPodTemplateEnvVarValueFromSecretFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -139,7 +139,7 @@ secretKeyRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf := SetDaemonSetContainerEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
+			tf := SetPodTemplateContainerEnvVarValueFromSecretFunc(tc.container, tc.key, tc.secretName, tc.secretKey)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -155,7 +155,7 @@ secretKeyRef:
 	}
 }
 
-func TestSetDaemonSetEnvVarValueFromFieldFunc(t *testing.T) {
+func TestSetPodTemplateEnvVarValueFromFieldFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -212,7 +212,7 @@ fieldRef:
 		t.Run(tc.name, func(t *testing.T) {
 			// Make a copy of the object.
 			obj := testObj.Copy()
-			tf := SetDaemonSetContainerEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
+			tf := SetPodTemplateContainerEnvVarValueFromFieldFunc(tc.container, tc.key, tc.fieldPath)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -228,7 +228,7 @@ fieldRef:
 	}
 }
 
-func TestSetDaemonSetHostPathVolumeFunc(t *testing.T) {
+func TestSetPodTemplateHostPathVolumeFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -307,7 +307,7 @@ hostPath:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetHostPathVolumeFunc(tc.volume, tc.path, &tc.pathType)
+			tf := SetPodTemplateHostPathVolumeFunc(tc.volume, tc.path, &tc.pathType)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -322,7 +322,7 @@ hostPath:
 	}
 }
 
-func TestSetDaemonSetConfigMapVolumeFunc(t *testing.T) {
+func TestSetPodTemplateConfigMapVolumeFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -398,7 +398,7 @@ configMap:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetConfigMapVolumeFunc(tc.volume, tc.configMapName, tc.keyToPaths)
+			tf := SetPodTemplateConfigMapVolumeFunc(tc.volume, tc.configMapName, tc.keyToPaths)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -413,7 +413,7 @@ configMap:
 	}
 }
 
-func TestSetDaemonSetSecretVolumeFunc(t *testing.T) {
+func TestSetPodTemplateSecretVolumeFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -489,7 +489,7 @@ secret:
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetSecretVolumeFunc(tc.volume, tc.secretName, tc.keyToPaths)
+			tf := SetPodTemplateSecretVolumeFunc(tc.volume, tc.secretName, tc.keyToPaths)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -504,7 +504,7 @@ secret:
 	}
 }
 
-func TestSetDaemonSetVolumeMountFunc(t *testing.T) {
+func TestSetPodTemplateVolumeMountFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -574,7 +574,7 @@ mountPropagation: Bidirectional`,
 			obj := testObj.Copy()
 
 			// Transform.
-			tf := SetDaemonSetVolumeMountFunc(tc.container, tc.volName, tc.mountPath, tc.mountPropagation)
+			tf := SetPodTemplateVolumeMountFunc(tc.container, tc.volName, tc.mountPath, tc.mountPropagation)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -591,7 +591,7 @@ mountPropagation: Bidirectional`,
 	}
 }
 
-func TestSetDaemonSetContainerResourceFunc(t *testing.T) {
+func TestSetPodTemplateContainerResourceFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -669,7 +669,7 @@ spec:
 			// Make a copy of the object.
 			obj := testObj.Copy()
 
-			tf := SetDaemonSetContainerResourceFunc(tc.container, tc.resources)
+			tf := SetPodTemplateContainerResourceFunc(tc.container, tc.resources)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -695,7 +695,7 @@ spec:
 	}
 }
 
-func TestSetDaemonSetTolerationsFunc(t *testing.T) {
+func TestSetPodTemplateTolerationsFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -797,7 +797,7 @@ spec:
 			// Make a copy of the object.
 			obj := tc.object.Copy()
 
-			tf := SetDaemonSetTolerationFunc(tc.tolerations)
+			tf := SetPodTemplateTolerationFunc(tc.tolerations)
 			err = tf(obj)
 			if !tc.wantErr {
 				assert.Nil(t, err)
@@ -815,7 +815,7 @@ spec:
 	}
 }
 
-func TestSetDaemonSetNodeSelectorTermsFunc(t *testing.T) {
+func TestSetPodTemplateNodeSelectorTermsFunc(t *testing.T) {
 	testObj, err := kyaml.Parse(`
 apiVersion: apps/v1
 kind: DaemonSet
@@ -928,7 +928,7 @@ nodeAffinity:
 			// Make a copy of the object.
 			obj := tc.object.Copy()
 
-			tf := SetDaemonSetNodeSelectorTermsFunc(tc.nodeSelectorTerms)
+			tf := SetPodTemplateNodeSelectorTermsFunc(tc.nodeSelectorTerms)
 			err = tf(obj)
 			assert.Nil(t, err)
 
@@ -938,6 +938,78 @@ nodeAffinity:
 			gotStr, err := gotAffinity.String()
 			assert.Nil(t, err)
 			assert.Equal(t, strings.TrimSpace(tc.wantNodeAffinity), strings.TrimSpace(gotStr))
+		})
+	}
+}
+
+func TestAppendPodTemplateContainerArgsFunc(t *testing.T) {
+	testObj, err := kyaml.Parse(`
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: some-app
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+      - args:
+        - server
+        - --leader-elect=true
+        image: some-image:v1.0.0
+        name: myapp
+      - name: my-other-app
+        image: some-other-image:v2.0.0
+`)
+	assert.Nil(t, err)
+
+	cases := []struct {
+		name      string
+		container string
+		args      []string
+		want      []string
+	}{
+		{
+			name:      "add new args",
+			container: "my-other-app",
+			args:      []string{"some-new-value", "more-new-value"},
+			want:      []string{"some-new-value", "more-new-value"},
+		},
+		{
+			name:      "append to existing args",
+			container: "myapp",
+			args:      []string{"some-new-value", "more-new-value"},
+			want:      []string{"server", "--leader-elect=true", "some-new-value", "more-new-value"},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Make a copy of the object.
+			obj := testObj.Copy()
+
+			// Transform.
+			tf := AppendPodTemplateContainerArgsFunc(tc.container, tc.args)
+			err = tf(obj)
+			assert.Nil(t, err)
+
+			// Query and check value.
+			containerSelector := fmt.Sprintf("[name=%s]", tc.container)
+			val, err := obj.Pipe(kyaml.Lookup("spec", "template", "spec", "containers", containerSelector, "args"))
+			assert.Nil(t, err)
+
+			str, err := val.String()
+			assert.Nil(t, err)
+
+			// Convert want list to RNode string value.
+			wantRNode := kyaml.NewListRNode(tc.want...)
+			wantStr, err := wantRNode.String()
+			assert.Nil(t, err)
+
+			assert.Equal(t, str, wantStr)
 		})
 	}
 }
