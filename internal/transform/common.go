@@ -59,6 +59,17 @@ func goToRNode(goObj interface{}) (*kyaml.RNode, error) {
 	return obj, nil
 }
 
+// AppendSequenceNodeFunc appends a sequence node field with the given values
+// at the given path.
+func AppendSequenceNodeFunc(value *kyaml.RNode, path ...string) transform.TransformFunc {
+	return func(obj *kyaml.RNode) error {
+		return obj.PipeE(
+			kyaml.LookupCreate(kyaml.SequenceNode, path...),
+			kyaml.Append(value.YNode().Content...),
+		)
+	}
+}
+
 // SetScalarNodeFunc sets a scalar node field with the given value at the given
 // path.
 func SetScalarNodeFunc(valField string, value *kyaml.RNode, path ...string) transform.TransformFunc {

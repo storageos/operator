@@ -13,7 +13,7 @@ data:
             {"name" : "HostName"}
           ],
           "extenders" : [{
-            "urlPrefix": "http://storageos.kube-system.svc:5705/v2/k8s/scheduler",
+            "urlPrefix": "http://storageos:5705/v2/k8s/scheduler",
             "filterVerb": "filter",
             "prioritizeVerb": "prioritize",
             "weight": 1,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
+	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
 	"go.opentelemetry.io/otel"
@@ -16,10 +17,16 @@ import (
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
 	"github.com/storageos/operator/internal/image"
+	stransform "github.com/storageos/operator/internal/transform"
 )
 
-// schedulerPackage contains the resource manifests for scheduler operand.
-const schedulerPackage = "scheduler"
+const (
+	// schedulerPackage contains the resource manifests for scheduler operand.
+	schedulerPackage = "scheduler"
+
+	// schedulerContainer is the name of the scheduler container.
+	schedulerContainer = "storageos-scheduler"
+)
 
 type SchedulerOperand struct {
 	name            string
@@ -81,7 +88,24 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 
+	// Create deployment transforms.
+	deploymentTransforms := []transform.TransformFunc{}
+
+	// Add container args.
+	argsTF := stransform.AppendDeploymentContainerArgsFunc(schedulerContainer,
+		[]string{
+			fmt.Sprintf("--policy-configmap-namespace=%s", cluster.Namespace),
+			fmt.Sprintf("--leader-elect-resource-namespace=%s", cluster.Namespace),
+			fmt.Sprintf("--lock-object-namespace=%s", cluster.Namespace),
+		},
+	)
+
+	deploymentTransforms = append(deploymentTransforms, argsTF)
+
 	return declarative.NewBuilder(schedulerPackage, fs,
+		declarative.WithManifestTransform(transform.ManifestTransform{
+			"scheduler/deployment.yaml": deploymentTransforms,
+		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
