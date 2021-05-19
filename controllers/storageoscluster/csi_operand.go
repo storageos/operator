@@ -8,7 +8,6 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
-	"go.opentelemetry.io/otel"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -39,9 +38,7 @@ func (c *CSIOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, e
 }
 
 func (c *CSIOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("CSIOperand Ensure")
-	ctx, span := tr.Start(ctx, "csioperand ensure")
+	ctx, span, _, _ := instrumentation.Start(ctx, "CSIOperand.Ensure")
 	defer span.End()
 
 	b, err := getCSIBuilder(c.fs, obj)
@@ -54,9 +51,7 @@ func (c *CSIOperand) Ensure(ctx context.Context, obj client.Object, ownerRef met
 }
 
 func (c *CSIOperand) Delete(ctx context.Context, obj client.Object) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("CSIOperand Delete")
-	ctx, span := tr.Start(ctx, "csioperand delete")
+	ctx, span, _, _ := instrumentation.Start(ctx, "CSIOperand.Delete")
 	defer span.End()
 
 	b, err := getCSIBuilder(c.fs, obj)

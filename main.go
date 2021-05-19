@@ -71,12 +71,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.StorageOSClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("StorageOSCluster"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "StorageOSCluster")
+	if err = controllers.NewStorageOSClusterReconciler(mgr).
+		SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller",
+			"controller", "StorageOSCluster")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

@@ -9,7 +9,6 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
-	"go.opentelemetry.io/otel"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -52,9 +51,7 @@ func (sc *StorageClassOperand) ReadyCheck(ctx context.Context, obj client.Object
 }
 
 func (sc *StorageClassOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("StorageClassOperand Ensure")
-	ctx, span := tr.Start(ctx, "storageclassoperand ensure")
+	_, span, _, log := instrumentation.Start(ctx, "StorageClassOperand.Ensure")
 	defer span.End()
 
 	b, err := getStorageClassBuilder(sc.fs, obj)
@@ -71,9 +68,7 @@ func (sc *StorageClassOperand) Ensure(ctx context.Context, obj client.Object, ow
 }
 
 func (sc *StorageClassOperand) Delete(ctx context.Context, obj client.Object) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("StorageClassOperand Delete")
-	ctx, span := tr.Start(ctx, "storageclassoperand delete")
+	ctx, span, _, _ := instrumentation.Start(ctx, "StorageClassOperand.Delete")
 	defer span.End()
 
 	b, err := getStorageClassBuilder(sc.fs, obj)

@@ -8,7 +8,6 @@ import (
 	"github.com/darkowlzz/operator-toolkit/object"
 	operatorv1 "github.com/darkowlzz/operator-toolkit/operator/v1"
 	storageoscomv1 "github.com/storageos/operator/api/v1"
-	"go.opentelemetry.io/otel"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +27,7 @@ func (c *StorageOSClusterController) Default(context.Context, client.Object) {}
 func (c *StorageOSClusterController) Validate(context.Context, client.Object) error { return nil }
 
 func (c *StorageOSClusterController) Initialize(ctx context.Context, obj client.Object, condn metav1.Condition) error {
-	tr := otel.Tracer("Initialize")
-	_, span := tr.Start(ctx, "initialization")
+	_, span, _, _ := instrumentation.Start(ctx, "StorageOSClusterController.Initialize")
 	defer span.End()
 
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
@@ -52,8 +50,7 @@ func (c *StorageOSClusterController) Cleanup(ctx context.Context, obj client.Obj
 }
 
 func (c *StorageOSClusterController) UpdateStatus(ctx context.Context, obj client.Object) error {
-	tr := otel.Tracer("UpdateStatus")
-	ctx, span := tr.Start(ctx, "update status")
+	ctx, span, _, _ := instrumentation.Start(ctx, "StorageOSClusterController.UpdateStatus")
 	defer span.End()
 
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)

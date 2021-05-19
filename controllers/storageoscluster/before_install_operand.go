@@ -6,7 +6,6 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
-	"go.opentelemetry.io/otel"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -34,9 +33,7 @@ func (bi *BeforeInstallOperand) ReadyCheck(ctx context.Context, obj client.Objec
 }
 
 func (bi *BeforeInstallOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("BeforeInstallOperand Ensure")
-	ctx, span := tr.Start(ctx, "beforeinstalloperand ensure")
+	ctx, span, _, _ := instrumentation.Start(ctx, "BeforeInstallOperand.Ensure")
 	defer span.End()
 
 	b, err := getBeforeInstallBuilder(bi.fs, obj)
@@ -49,9 +46,7 @@ func (bi *BeforeInstallOperand) Ensure(ctx context.Context, obj client.Object, o
 }
 
 func (bi *BeforeInstallOperand) Delete(ctx context.Context, obj client.Object) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("BeforeInstallOperand Delete")
-	ctx, span := tr.Start(ctx, "beforeinstalloperand delete")
+	ctx, span, _, _ := instrumentation.Start(ctx, "BeforeInstallOperand.Delete")
 	defer span.End()
 
 	b, err := getBeforeInstallBuilder(bi.fs, obj)

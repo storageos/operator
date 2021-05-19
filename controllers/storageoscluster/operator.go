@@ -1,16 +1,18 @@
 package storageoscluster
 
 import (
+	"context"
 	"fmt"
 
 	operatorv1 "github.com/darkowlzz/operator-toolkit/operator/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/executor"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	"github.com/darkowlzz/operator-toolkit/telemetry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/kustomize/api/filesys"
 )
 
-var log = ctrl.Log.WithName("cluster-controller")
+const instrumentationName = "github.com/storageos/operator/controllers/storageoscluster"
 
 const (
 	apiManagerOpName    = "api-manager-operand"
@@ -22,7 +24,17 @@ const (
 	afterInstallOpName  = "after-install-operand"
 )
 
+var instrumentation *telemetry.Instrumentation
+
+func init() {
+	// Setup package instrumentation.
+	instrumentation = telemetry.NewInstrumentation(instrumentationName)
+}
+
 func NewOperator(mgr ctrl.Manager, fs filesys.FileSystem, execStrategy executor.ExecutionStrategy) (*operatorv1.CompositeOperator, error) {
+	_, span, _, log := instrumentation.Start(context.Background(), "storageoscluster.NewOperator")
+	defer span.End()
+
 	// Create operands with their relationships.
 	//
 	//      ┌────────────────┐        ┌───────────┐
@@ -63,6 +75,7 @@ func NewOperator(mgr ctrl.Manager, fs filesys.FileSystem, execStrategy executor.
 		operatorv1.WithEventRecorder(mgr.GetEventRecorderFor("storageoscluster-controller")),
 		operatorv1.WithExecutionStrategy(execStrategy),
 		operatorv1.WithOperands(apiManagerOp, csiOp, schedulerOp, nodeOp, storageClassOp, beforeInstallOp, afterInstallOp),
+		operatorv1.WithInstrumentation(nil, nil, log),
 	)
 }
 

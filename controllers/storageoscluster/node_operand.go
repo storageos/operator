@@ -11,7 +11,6 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
-	"go.opentelemetry.io/otel"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,9 +68,7 @@ func (c *NodeOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, 
 }
 
 func (c *NodeOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("NodeOperand Ensure")
-	ctx, span := tr.Start(ctx, "nodeoperand ensure")
+	ctx, span, _, _ := instrumentation.Start(ctx, "NodeOperand.Ensure")
 	defer span.End()
 
 	b, err := getNodeBuilder(c.fs, obj)
@@ -86,9 +83,7 @@ func (c *NodeOperand) Ensure(ctx context.Context, obj client.Object, ownerRef me
 }
 
 func (c *NodeOperand) Delete(ctx context.Context, obj client.Object) (eventv1.ReconcilerEvent, error) {
-	// Setup a tracer and start a span.
-	tr := otel.Tracer("NodeOperand Delete")
-	ctx, span := tr.Start(ctx, "nodeoperand delete")
+	ctx, span, _, _ := instrumentation.Start(ctx, "NodeOperand.Delete")
 	defer span.End()
 
 	b, err := getNodeBuilder(c.fs, obj)

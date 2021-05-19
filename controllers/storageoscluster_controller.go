@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 
 	compositev1 "github.com/darkowlzz/operator-toolkit/controller/composite/v1"
 	"github.com/darkowlzz/operator-toolkit/declarative/loader"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/executor"
-	"github.com/go-logr/logr"
+	"github.com/darkowlzz/operator-toolkit/telemetry"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,13 +16,31 @@ import (
 	"github.com/storageos/operator/controllers/storageoscluster"
 )
 
+const instrumentationName = "github.com/storageos/operator/controllers"
+
+var instrumentation *telemetry.Instrumentation
+
+func init() {
+	// Setup package instrumentation.
+	instrumentation = telemetry.NewInstrumentationWithProviders(
+		instrumentationName, nil, nil,
+		ctrl.Log.WithName("controllers").WithName("StorageOSCluster"),
+	)
+}
+
 // StorageOSClusterReconciler reconciles a StorageOSCluster object
 type StorageOSClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
 	Scheme *runtime.Scheme
 
 	compositev1.CompositeReconciler
+}
+
+func NewStorageOSClusterReconciler(mgr ctrl.Manager) *StorageOSClusterReconciler {
+	return &StorageOSClusterReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}
 }
 
 // +kubebuilder:rbac:groups=storageos.com,resources=storageosclusters,verbs=get;list;watch;create;update;patch;delete
@@ -30,6 +49,9 @@ type StorageOSClusterReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	_, span, _, log := instrumentation.Start(context.Background(), "StorageosCluster.SetupWithManager")
+	defer span.End()
+
 	// Load manifests in an in-memory filesystem.
 	fs, err := loader.NewLoadedManifestFileSystem("channels", "stable")
 	if err != nil {
@@ -47,7 +69,7 @@ func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		compositev1.WithName("storageoscluster-controller"),
 		compositev1.WithCleanupStrategy(compositev1.FinalizerCleanup),
 		compositev1.WithInitCondition(compositev1.DefaultInitCondition),
-		compositev1.WithLogger(r.Log),
+		compositev1.WithInstrumentation(nil, nil, log),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create new CompositeReconciler: %w", err)
