@@ -4,6 +4,9 @@ metadata:
   name: storageos-daemonset
 spec:
   template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-logs-container: storageos
     spec:
       containers:
       - args:
@@ -89,7 +92,7 @@ spec:
           name: registration-dir
       - args:
         - --csi-address=$(ADDRESS)
-        - --connection-timeout=3s
+        - --probe-timeout=3s
         env:
         - name: ADDRESS
           value: /csi/csi.sock
@@ -134,10 +137,25 @@ spec:
         - mountPath: /var/lib/storageos
           mountPropagation: Bidirectional
           name: state
-      priorityClassName: storageos
+      priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccountName: storageos-daemonset-sa
       terminationGracePeriodSeconds: 30
+      tolerations:
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
+      - key: node.kubernetes.io/memory-pressure
+        operator: Exists
+      - key: node.kubernetes.io/network-unavailable
+        operator: Exists
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+      - key: node.kubernetes.io/pid-pressure
+        operator: Exists
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+      - key: node.kubernetes.io/unschedulable
+        operator: Exists
       volumes:
       - hostPath:
           path: /lib/modules

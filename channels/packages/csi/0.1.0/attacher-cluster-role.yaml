@@ -42,6 +42,14 @@ rules:
 - apiGroups:
   - storage.k8s.io
   resources:
+  - volumeattachments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
   - csinodeinfos
   - csinodes
   verbs:

@@ -21,10 +21,11 @@ spec:
         name: storageos-scheduler
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      schedulerName: default-scheduler
       serviceAccountName: storageos-scheduler-sa
       terminationGracePeriodSeconds: 30
       tolerations:
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
       - effect: NoExecute
         key: node.kubernetes.io/not-ready
         operator: Exists

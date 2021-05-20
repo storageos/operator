@@ -9,4 +9,7 @@ spec:
     protocol: TCP
     targetPort: 5705
   sessionAffinity: None
+  selector:
+    app: storageos
+    app.kubernetes.io/component: control-plane
   type: ClusterIP

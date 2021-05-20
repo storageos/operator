@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: storageos-api-manager-metrics
+  name: storageos-webhook
 spec:
   ports:
-  - name: metrics
-    port: 8080
+  - name: webhook
+    port: 443
     protocol: TCP
-    targetPort: 8080
+    targetPort: 9443
   sessionAffinity: None
   selector:
     app.kubernetes.io/component: storageos-api-manager

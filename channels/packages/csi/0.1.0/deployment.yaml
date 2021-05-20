@@ -11,7 +11,6 @@ spec:
       containers:
       - args:
         - --v=5
-        - --provisioner=storageos
         - --csi-address=$(ADDRESS)
         - --extra-create-metadata
         env:
@@ -54,10 +53,11 @@ spec:
         - mountPath: /csi
           name: plugin-dir
       restartPolicy: Always
-      schedulerName: default-scheduler
       serviceAccountName: storageos-csi-helper-sa
       terminationGracePeriodSeconds: 30
       tolerations:
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
       - effect: NoExecute
         key: node.kubernetes.io/not-ready
         operator: Exists

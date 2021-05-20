@@ -6,21 +6,32 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - services
   - endpoints
+  - services
   - configmaps
-  - configmaps/status
   verbs:
+  - create
+  - delete
   - get
   - list
   - watch
-  - create
-  - delete
   - update
   - patch
 - apiGroups:
   - ""
   resources:
+  - endpoints/status
+  - services/status
+  - configmaps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - nodes
   - persistentvolumeclaims
   verbs:
   - get
@@ -29,6 +40,52 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - create
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch

@@ -16,6 +16,15 @@ spec:
         app: storageos
         app.kubernetes.io/component: storageos-api-manager
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: storageos-api-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --enable-leader-election
@@ -33,10 +42,11 @@ spec:
         - mountPath: /etc/storageos/secrets/api
           name: api-secret
       restartPolicy: Always
-      schedulerName: default-scheduler
       serviceAccountName: storageos-api-manager-sa
       terminationGracePeriodSeconds: 30
       tolerations:
+      - key: node.kubernetes.io/disk-pressure
+        operator: Exists
       - effect: NoExecute
         key: node.kubernetes.io/not-ready
         operator: Exists
