@@ -13,6 +13,8 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY internal/ internal/
+COPY channels/ channels/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
@@ -22,6 +24,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/channels channels
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]

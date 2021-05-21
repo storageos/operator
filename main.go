@@ -64,7 +64,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "9afd270a.",
+		LeaderElectionID:       "storageos-operator-lease",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

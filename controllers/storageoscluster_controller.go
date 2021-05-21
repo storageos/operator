@@ -47,6 +47,9 @@ func NewStorageOSClusterReconciler(mgr ctrl.Manager) *StorageOSClusterReconciler
 // +kubebuilder:rbac:groups=storageos.com,resources=storageosclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=storageos.com,resources=storageosclusters/finalizers,verbs=update
 
+// TODO: Remove this. Temporary, for initial development only.
+// +kubebuilder:rbac:groups=*,resources=*,verbs=*
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	_, span, _, log := instrumentation.Start(context.Background(), "StorageosCluster.SetupWithManager")
