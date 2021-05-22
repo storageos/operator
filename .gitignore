@@ -7,6 +7,8 @@
 *.dylib
 bin
 testbin/*
+kind-logs-*/*
+kubeconfig
 
 # Test binary, build with `go test -c`
 *.test

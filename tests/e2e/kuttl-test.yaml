@@ -1,0 +1,11 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+- ./tests/e2e/
+# crdDir: config/crd/
+kindConfig: tests/e2e/kind-config.yaml
+startKIND: true
+kindNodeCache: true
+kindContainers:
+  - storageos/operator:test
+timeout: 60

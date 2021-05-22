@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator-controller-manager
+  namespace: operator-system
+status:
+  readyReplicas: 1
