@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 
@@ -48,6 +49,18 @@ const (
 
 	// Shared device directory volume name.
 	sharedDirVolume = "shared"
+
+	// Kustomize image names for all the container images.
+	kImageInit             = "storageos-init"
+	kImageNode             = "storageos-node"
+	kImageCSINodeDriverReg = "csi-node-driver-registrar"
+	kImageCSILivenessProbe = "csi-livenessprobe"
+
+	// Related image environment variables.
+	initImageEnvVar             = "RELATED_IMAGE_STORAGEOS_INIT"
+	nodeImageEnvVar             = "RELATED_IMAGE_STORAGEOS_NODE"
+	csiNodeDriverRegImageEnvVar = "RELATED_IMAGE_CSIV1_NODE_DRIVER_REGISTRAR"
+	csiLivenessProbeImageEnvVar = "RELATED_IMAGE_CSIV1_LIVENESS_PROBE"
 )
 
 type NodeOperand struct {
@@ -103,11 +116,23 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 
 	// Get image names.
 	images := []kustomizetypes.Image{}
+
+	// Check environment variables for related images.
+	relatedImages := image.NamedImages{
+		kImageInit:             os.Getenv(initImageEnvVar),
+		kImageNode:             os.Getenv(nodeImageEnvVar),
+		kImageCSINodeDriverReg: os.Getenv(csiNodeDriverRegImageEnvVar),
+		kImageCSILivenessProbe: os.Getenv(csiLivenessProbeImageEnvVar),
+	}
+	images = append(images, image.GetKustomizeImageList(relatedImages)...)
+
+	// Get the images from the cluster spec. These overwrite the default images
+	// set by the operator related images environment variables.
 	namedImages := image.NamedImages{
-		"storageos-init":            cluster.Spec.Images.InitContainer,
-		"storageos-node":            cluster.Spec.Images.NodeContainer,
-		"csi-node-driver-registrar": cluster.Spec.Images.CSINodeDriverRegistrarContainer,
-		"csi-livenessprobe":         cluster.Spec.Images.CSILivenessProbeContainer,
+		kImageInit:             cluster.Spec.Images.InitContainer,
+		kImageNode:             cluster.Spec.Images.NodeContainer,
+		kImageCSINodeDriverReg: cluster.Spec.Images.CSINodeDriverRegistrarContainer,
+		kImageCSILivenessProbe: cluster.Spec.Images.CSILivenessProbeContainer,
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 

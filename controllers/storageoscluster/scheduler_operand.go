@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
@@ -25,6 +26,12 @@ const (
 
 	// schedulerContainer is the name of the scheduler container.
 	schedulerContainer = "storageos-scheduler"
+
+	// Kustomize image name for container image.
+	kImageKubeScheduler = "kube-scheduler"
+
+	// Related image environment variable.
+	kubeSchedulerEnvVar = "RELATED_IMAGE_KUBE_SCHEDULER"
 )
 
 type SchedulerOperand struct {
@@ -78,8 +85,17 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 
 	// Get image name.
 	images := []kustomizetypes.Image{}
+
+	// Check environment variables for related images.
+	relatedImages := image.NamedImages{
+		kImageKubeScheduler: os.Getenv(kubeSchedulerEnvVar),
+	}
+	images = append(images, image.GetKustomizeImageList(relatedImages)...)
+
+	// Get the images from the cluster spec. This overwrites the default image
+	// set by the operator related images environment variables.
 	namedImages := image.NamedImages{
-		"kube-scheduler": cluster.Spec.Images.KubeSchedulerContainer,
+		kImageKubeScheduler: cluster.Spec.Images.KubeSchedulerContainer,
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 

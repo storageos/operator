@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
@@ -19,8 +20,17 @@ import (
 	stransform "github.com/storageos/operator/internal/transform"
 )
 
-// apiManagerPackage contains the resource manifests for api-manager operand.
-const apiManagerPackage = "api-manager"
+const (
+	// apiManagerPackage contains the resource manifests for api-manager
+	// operand.
+	apiManagerPackage = "api-manager"
+
+	// Kustomize image name for container image.
+	kImageAPIManager = "api-manager"
+
+	// Related image environment variable.
+	apiManagerImageEnvVar = "RELATED_IMAGE_API_MANAGER"
+)
 
 type APIManagerOperand struct {
 	name            string
@@ -72,8 +82,17 @@ func getAPIManagerBuilder(fs filesys.FileSystem, obj client.Object) (*declarativ
 
 	// Get image name.
 	images := []kustomizetypes.Image{}
+
+	// Check environment variables for related images.
+	relatedImages := image.NamedImages{
+		kImageAPIManager: os.Getenv(apiManagerImageEnvVar),
+	}
+	images = append(images, image.GetKustomizeImageList(relatedImages)...)
+
+	// Get the images from the cluster spec. This overwrites the default image
+	// set by the operator related images environment variables.
 	namedImages := image.NamedImages{
-		"api-manager": cluster.Spec.Images.APIManagerContainer,
+		kImageAPIManager: cluster.Spec.Images.APIManagerContainer,
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 

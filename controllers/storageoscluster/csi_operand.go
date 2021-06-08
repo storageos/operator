@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
@@ -17,8 +18,22 @@ import (
 	"github.com/storageos/operator/internal/image"
 )
 
-// csiPackage contains the resource manifests for csi operand.
-const csiPackage = "csi"
+const (
+	// csiPackage contains the resource manifests for csi operand.
+	csiPackage = "csi"
+
+	// Kustomize image name for container image.
+	kImageCSIProvisioner = "csi-provisioner"
+	kImageCSIAttacher    = "csi-attacher"
+	kImageCSIResizer     = "csi-resizer"
+
+	// Related image environment variable.
+	csiProvisionerEnvVar = "RELATED_IMAGE_CSIV1_EXTERNAL_PROVISIONER"
+	// TODO: Attacher env var has "V3" suffix for backwards compatibility.
+	// Remove the suffix when doing a breaking change.
+	csiAttacherEnvVar = "RELATED_IMAGE_CSIV1_EXTERNAL_ATTACHER_V3"
+	csiResizerEnvVar  = "RELATED_IMAGE_CSIV1_EXTERNAL_RESIZER"
+)
 
 type CSIOperand struct {
 	name            string
@@ -71,10 +86,21 @@ func getCSIBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Build
 
 	// Get image names.
 	images := []kustomizetypes.Image{}
+
+	// Check environment variables for related images.
+	relatedImages := image.NamedImages{
+		kImageCSIProvisioner: os.Getenv(csiProvisionerEnvVar),
+		kImageCSIAttacher:    os.Getenv(csiAttacherEnvVar),
+		kImageCSIResizer:     os.Getenv(csiResizerEnvVar),
+	}
+	images = append(images, image.GetKustomizeImageList(relatedImages)...)
+
+	// Get the images from the cluster spec. These overwrite the default images
+	// set by the operator related images environment variables.
 	namedImages := image.NamedImages{
-		"csi-provisioner": cluster.Spec.Images.CSIExternalProvisionerContainer,
-		"csi-attacher":    cluster.Spec.Images.CSIExternalAttacherContainer,
-		"csi-resizer":     cluster.Spec.Images.CSIExternalResizerContainer,
+		kImageCSIProvisioner: cluster.Spec.Images.CSIExternalProvisionerContainer,
+		kImageCSIAttacher:    cluster.Spec.Images.CSIExternalAttacherContainer,
+		kImageCSIResizer:     cluster.Spec.Images.CSIExternalResizerContainer,
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 
