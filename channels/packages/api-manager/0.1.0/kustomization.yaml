@@ -12,8 +12,3 @@ resources:
 - mutatingwebhook.yaml
 - key-management-role.yaml
 - key-management-role-binding.yaml
-
-images:
-  - name: api-manager
-    newName: storageos/api-manager
-    newTag: v1.1.1
