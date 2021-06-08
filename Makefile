@@ -101,6 +101,9 @@ manifests: controller-gen config-update
 config-update:
 	@echo "$$REL_IMG_CONF" > config/manager/related_image_config.yaml
 
+install-manifest:
+	$(KUSTOMIZE) build config/default > storageos-operator.yaml
+
 # Run go fmt against code
 fmt:
 	go fmt ./...

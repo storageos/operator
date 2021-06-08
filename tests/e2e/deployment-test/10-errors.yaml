@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: operator-controller-manager
-  namespace: operator-system
+  name: storageos-controller-manager
+  namespace: storageos
 status:
   readyReplicas: 1

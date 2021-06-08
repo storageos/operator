@@ -9,6 +9,7 @@ bin
 testbin/*
 kind-logs-*/*
 kubeconfig
+storageos-operator.yaml
 
 # Test binary, build with `go test -c`
 *.test
