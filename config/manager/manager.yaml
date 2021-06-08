@@ -29,23 +29,9 @@ spec:
         - /manager
         args:
         - --leader-elect
-        env:
-        - name: RELATED_IMAGE_API_MANAGER
-          value: "storageos/api-manager:v1.1.2"
-        - name: RELATED_IMAGE_CSIV1_EXTERNAL_PROVISIONER
-          value: "storageos/csi-provisioner:v2.1.1-patched"
-        - name: RELATED_IMAGE_CSIV1_EXTERNAL_ATTACHER_V3
-          value: "quay.io/k8scsi/csi-attacher:v3.1.0"
-        - name: RELATED_IMAGE_CSIV1_EXTERNAL_RESIZER
-          value: "quay.io/k8scsi/csi-resizer:v1.1.0"
-        - name: RELATED_IMAGE_STORAGEOS_INIT
-          value: "storageos/init:v2.1.0"
-        - name: RELATED_IMAGE_STORAGEOS_NODE
-          value: "storageos/node:v2.4.0"
-        - name: RELATED_IMAGE_CSIV1_NODE_DRIVER_REGISTRAR
-          value: "quay.io/k8scsi/csi-node-driver-registrar:v2.1.0"
-        - name: RELATED_IMAGE_CSIV1_LIVENESS_PROBE
-          value: "quay.io/k8scsi/livenessprobe:v2.2.0"
+        envFrom:
+          - configMapRef:
+              name: related-image-config
         image: controller:latest
         name: manager
         securityContext:

@@ -27,6 +27,30 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+API_MANAGER_IMG ?= storageos/api-manager:v1.1.2
+EXTERNAL_PROVISIONER_IMG ?= storageos/csi-provisioner:v2.1.1-patched
+EXTERNAL_ATTACHER_IMG ?= quay.io/k8scsi/csi-attacher:v3.1.0
+EXTERNAL_RESIZER_IMG ?= quay.io/k8scsi/csi-resizer:v1.1.0
+INIT_IMG ?= storageos/init:v2.1.0
+NODE_IMG ?= storageos/node:v2.4.0
+NODE_DRIVER_REG_IMG ?= quay.io/k8scsi/csi-node-driver-registrar:v2.1.0
+LIVENESS_PROBE_IMG ?= quay.io/k8scsi/livenessprobe:v2.2.0
+
+# The related image environment variables. These are used in the opreator's
+# configuration by converting into a ConfigMap and loading as a container's
+# environment variables. See make target cofig-update.
+define REL_IMG_CONF
+RELATED_IMAGE_API_MANAGER=${API_MANAGER_IMG}
+RELATED_IMAGE_CSIV1_EXTERNAL_PROVISIONER=${EXTERNAL_PROVISIONER_IMG}
+RELATED_IMAGE_CSIV1_EXTERNAL_ATTACHER_V3=${EXTERNAL_ATTACHER_IMG}
+RELATED_IMAGE_CSIV1_EXTERNAL_RESIZER=${EXTERNAL_RESIZER_IMG}
+RELATED_IMAGE_STORAGEOS_INIT=${INIT_IMG}
+RELATED_IMAGE_STORAGEOS_NODE=${NODE_IMG}
+RELATED_IMAGE_CSIV1_NODE_DRIVER_REGISTRAR=${NODE_DRIVER_REG_IMG}
+RELATED_IMAGE_CSIV1_LIVENESS_PROBE=${LIVENESS_PROBE_IMG}
+endef
+export REL_IMG_CONF
+
 all: manager
 
 # Run tests
@@ -42,6 +66,14 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
+	RELATED_IMAGE_API_MANAGER=${API_MANAGER_IMG} \
+	RELATED_IMAGE_CSIV1_EXTERNAL_PROVISIONER=${EXTERNAL_PROVISIONER_IMG} \
+	RELATED_IMAGE_CSIV1_EXTERNAL_ATTACHER_V3=${EXTERNAL_ATTACHER_IMG} \
+	RELATED_IMAGE_CSIV1_EXTERNAL_RESIZER=${EXTERNAL_RESIZER_IMG} \
+	RELATED_IMAGE_STORAGEOS_INIT=${INIT_IMG} \
+	RELATED_IMAGE_STORAGEOS_NODE=${NODE_IMG} \
+	RELATED_IMAGE_CSIV1_NODE_DRIVER_REGISTRAR=${NODE_DRIVER_REG_IMG} \
+	RELATED_IMAGE_CSIV1_LIVENESS_PROBE=${LIVENESS_PROBE_IMG} \
 	go run ./main.go
 
 # Install CRDs into a cluster
@@ -62,8 +94,12 @@ undeploy:
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
+manifests: controller-gen config-update
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+# Update the operator configuration.
+config-update:
+	@echo "$$REL_IMG_CONF" > config/manager/related_image_config.yaml
 
 # Run go fmt against code
 fmt:
