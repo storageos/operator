@@ -52,6 +52,7 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
+      priorityClassName: system-cluster-critical
       restartPolicy: Always
       serviceAccountName: storageos-csi-helper-sa
       terminationGracePeriodSeconds: 30

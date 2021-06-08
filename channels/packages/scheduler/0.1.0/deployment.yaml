@@ -20,6 +20,7 @@ spec:
         imagePullPolicy: IfNotPresent
         name: storageos-scheduler
       dnsPolicy: ClusterFirst
+      priorityClassName: system-cluster-critical
       restartPolicy: Always
       serviceAccountName: storageos-scheduler-sa
       terminationGracePeriodSeconds: 30

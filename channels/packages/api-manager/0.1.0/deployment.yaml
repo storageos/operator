@@ -41,6 +41,7 @@ spec:
         volumeMounts:
         - mountPath: /etc/storageos/secrets/api
           name: api-secret
+      priorityClassName: system-cluster-critical
       restartPolicy: Always
       serviceAccountName: storageos-api-manager-sa
       terminationGracePeriodSeconds: 30
