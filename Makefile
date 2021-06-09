@@ -60,11 +60,12 @@ test: generate fmt vet manifests
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.0/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
-e2e: kubectl-kuttl test --config tests/e2e/kuttl-test.yaml
+e2e:
+	kubectl-kuttl test --config tests/e2e/kuttl-test.yaml
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	CGO_ENABLED=0 go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
@@ -119,12 +120,21 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
-docker-build:
+# NOTE: The Dockerfile is written for use with goreleaser. For the same
+# Dockerfile to work directly with docker, the binary is copied to the PWD and
+# removed after use.
+docker-build: manager
+	@cp bin/manager manager
 	docker build -t ${IMG} .
+	@rm -f manager
 
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Build development binaries and container images using goreleaser.
+build-snapshot:
+	goreleaser --snapshot --rm-dist --config .github/.goreleaser-develop.yaml --skip-validate
 
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen

@@ -1,0 +1,75 @@
+project_name: storageos-operator
+builds:
+  - binary: manager
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - 7
+snapshot:
+  name_template: "{{ .Tag }}-next"
+dockers:
+  - image_templates:
+      - storageos/operator:develop-amd64
+    dockerfile: Dockerfile
+    use_buildx: true
+    goos: linux
+    goarch: amd64
+    build_flag_templates:
+      - "--pull"
+      - "--build-arg=ARCH=linux/amd64"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.name={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--platform=linux/amd64"
+    extra_files:
+    - channels/
+  - image_templates:
+      - storageos/operator:develop-arm64
+    dockerfile: Dockerfile
+    use_buildx: true
+    goos: linux
+    goarch: arm64
+    build_flag_templates:
+      - "--pull"
+      - "--build-arg=ARCH=linux/arm64"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.name={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--platform=linux/arm64"
+    extra_files:
+    - channels/
+  - image_templates:
+      - storageos/operator:develop-arm
+    dockerfile: Dockerfile
+    use_buildx: true
+    goos: linux
+    goarch: arm
+    goarm: 7
+    build_flag_templates:
+      - "--pull"
+      - "--build-arg=ARCH=linux/arm"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.name={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--platform=linux/arm/v7"
+    extra_files:
+    - channels/
+
+docker_manifests:
+  - name_template: storageos/operator:develop
+    image_templates:
+      - storageos/operator:develop-amd64
+      - storageos/operator:develop-arm64
+      - storageos/operator:develop-arm
