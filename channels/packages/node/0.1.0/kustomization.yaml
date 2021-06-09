@@ -9,5 +9,7 @@ resources:
 - driver-registrar-cluster-role.yaml
 - init-cluster-role-binding.yaml
 - init-cluster-role.yaml
+- node-cluster-role-binding.yaml
+- node-cluster-role.yaml
 - service.yaml
 - serviceaccount.yaml

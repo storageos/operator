@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: storageos:node
+  labels:
+    app: storageos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: storageos:node
+subjects:
+- kind: ServiceAccount
+  name: storageos-daemonset-sa
