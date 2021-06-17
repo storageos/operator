@@ -123,12 +123,3 @@ metadata:
   labels:
     app: storageos
     app.kubernetes.io/component: control-plane
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: storageos-scheduler-policy
-  namespace: default
-  labels:
-    app: storageos
-    app.kubernetes.io/component: scheduler

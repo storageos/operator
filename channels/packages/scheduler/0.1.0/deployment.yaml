@@ -11,14 +11,14 @@ spec:
       containers:
       - args:
         - kube-scheduler
-        - --leader-elect=true
-        - --scheduler-name=storageos-scheduler
-        - --policy-configmap=storageos-scheduler-policy
-        - --lock-object-name=storageos-scheduler
+        - --config=/scheduler/config.yaml
         - -v=4
         image: kube-scheduler
         imagePullPolicy: IfNotPresent
         name: storageos-scheduler
+        volumeMounts:
+        - name: config
+          mountPath: /scheduler
       dnsPolicy: ClusterFirst
       priorityClassName: system-cluster-critical
       restartPolicy: Always
@@ -35,3 +35,7 @@ spec:
         key: node.kubernetes.io/unreachable
         operator: Exists
         tolerationSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: storageos-scheduler-config

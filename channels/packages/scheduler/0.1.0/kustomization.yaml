@@ -6,8 +6,12 @@ resources:
 - cluster-role-binding.yaml
 - cluster-role.yaml
 - deployment.yaml
-- policy.yaml
 - serviceaccount.yaml
+
+configMapGenerator:
+- files:
+  - config.yaml
+  name: storageos-scheduler-config
 
 images:
   - name: kube-scheduler

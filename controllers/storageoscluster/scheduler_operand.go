@@ -24,9 +24,6 @@ const (
 	// schedulerPackage contains the resource manifests for scheduler operand.
 	schedulerPackage = "scheduler"
 
-	// schedulerContainer is the name of the scheduler container.
-	schedulerContainer = "storageos-scheduler"
-
 	// Kustomize image name for container image.
 	kImageKubeScheduler = "kube-scheduler"
 
@@ -99,23 +96,17 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 	}
 	images = append(images, image.GetKustomizeImageList(namedImages)...)
 
-	// Create deployment transforms.
-	deploymentTransforms := []transform.TransformFunc{}
+	// Create kubescheduler config transforms.
+	configTransforms := []transform.TransformFunc{}
 
-	// Add container args.
-	argsTF := stransform.AppendPodTemplateContainerArgsFunc(schedulerContainer,
-		[]string{
-			fmt.Sprintf("--policy-configmap-namespace=%s", cluster.Namespace),
-			fmt.Sprintf("--leader-elect-resource-namespace=%s", cluster.Namespace),
-			fmt.Sprintf("--lock-object-namespace=%s", cluster.Namespace),
-		},
-	)
+	// Add leader election resource lock namespace.
+	rnsTF := stransform.SetKubeSchedulerLeaderElectionRNamespaceFunc(cluster.Namespace)
 
-	deploymentTransforms = append(deploymentTransforms, argsTF)
+	configTransforms = append(configTransforms, rnsTF)
 
 	return declarative.NewBuilder(schedulerPackage, fs,
 		declarative.WithManifestTransform(transform.ManifestTransform{
-			"scheduler/deployment.yaml": deploymentTransforms,
+			"scheduler/config.yaml": configTransforms,
 		}),
 		declarative.WithKustomizeMutationFunc([]kustomize.MutateFunc{
 			kustomize.AddNamespace(cluster.GetNamespace()),

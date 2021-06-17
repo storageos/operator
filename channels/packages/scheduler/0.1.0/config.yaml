@@ -1,0 +1,15 @@
+apiVersion: kubescheduler.config.k8s.io/v1beta1
+kind: KubeSchedulerConfiguration
+profiles:
+  - schedulerName: storageos-scheduler
+extenders:
+  - urlPrefix: "http://storageos:5705/v2/k8s/scheduler"
+    filterVerb: filter
+    prioritizeVerb: prioritize
+    weight: 1000
+    enableHTTPS: false
+    nodeCacheCapable: false
+leaderElection:
+  leaderElect: true
+  resourceName: storageos-scheduler
+  resourceNamespace: default
