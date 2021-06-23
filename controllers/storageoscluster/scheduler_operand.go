@@ -10,6 +10,7 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -44,8 +45,25 @@ var _ operand.Operand = &SchedulerOperand{}
 func (c *SchedulerOperand) Name() string                             { return c.name }
 func (c *SchedulerOperand) Requires() []string                       { return c.requires }
 func (c *SchedulerOperand) RequeueStrategy() operand.RequeueStrategy { return c.requeueStrategy }
+
 func (c *SchedulerOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
-	return true, nil
+	ctx, span, _, log := instrumentation.Start(ctx, "SchedulerOperand.ReadyCheck")
+	defer span.End()
+
+	// Get the deployment object and check status of the replicas.
+	schedulerDep := &appsv1.Deployment{}
+	key := client.ObjectKey{Name: "storageos-scheduler", Namespace: obj.GetNamespace()}
+	if err := c.client.Get(ctx, key, schedulerDep); err != nil {
+		return false, err
+	}
+
+	if schedulerDep.Status.AvailableReplicas > 0 {
+		log.V(4).Info("Found available replicas more than 0", "availableReplicas", schedulerDep.Status.AvailableReplicas)
+		return true, nil
+	}
+
+	log.V(4).Info("scheduler not ready")
+	return false, nil
 }
 
 func (c *SchedulerOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {

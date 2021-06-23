@@ -3,6 +3,7 @@ package storageoscluster
 import (
 	"context"
 	"fmt"
+	"time"
 
 	operatorv1 "github.com/darkowlzz/operator-toolkit/operator/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/executor"
@@ -76,6 +77,7 @@ func NewOperator(mgr ctrl.Manager, fs filesys.FileSystem, execStrategy executor.
 		operatorv1.WithExecutionStrategy(execStrategy),
 		operatorv1.WithOperands(apiManagerOp, csiOp, schedulerOp, nodeOp, storageClassOp, beforeInstallOp, afterInstallOp),
 		operatorv1.WithInstrumentation(nil, nil, log),
+		operatorv1.WithRetryPeriod(5*time.Second), // TODO: Maybe make this configurable?
 	)
 }
 

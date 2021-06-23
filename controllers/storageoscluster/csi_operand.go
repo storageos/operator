@@ -9,6 +9,7 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -48,8 +49,25 @@ var _ operand.Operand = &CSIOperand{}
 func (c *CSIOperand) Name() string                             { return c.name }
 func (c *CSIOperand) Requires() []string                       { return c.requires }
 func (c *CSIOperand) RequeueStrategy() operand.RequeueStrategy { return c.requeueStrategy }
+
 func (c *CSIOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
-	return true, nil
+	ctx, span, _, log := instrumentation.Start(ctx, "CSIOperand.ReadyCheck")
+	defer span.End()
+
+	// Get the deployment object and check status of the replicas.
+	csiDep := &appsv1.Deployment{}
+	key := client.ObjectKey{Name: "storageos-csi-helper", Namespace: obj.GetNamespace()}
+	if err := c.client.Get(ctx, key, csiDep); err != nil {
+		return false, err
+	}
+
+	if csiDep.Status.AvailableReplicas > 0 {
+		log.V(4).Info("Found available replicas more than 0", "availableReplicas", csiDep.Status.AvailableReplicas)
+		return true, nil
+	}
+
+	log.V(4).Info("csi-helper not ready")
+	return false, nil
 }
 
 func (c *CSIOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {

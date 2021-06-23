@@ -10,6 +10,7 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
@@ -45,8 +46,26 @@ var _ operand.Operand = &APIManagerOperand{}
 func (c *APIManagerOperand) Name() string                             { return c.name }
 func (c *APIManagerOperand) Requires() []string                       { return c.requires }
 func (c *APIManagerOperand) RequeueStrategy() operand.RequeueStrategy { return c.requeueStrategy }
+
 func (c *APIManagerOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
-	return true, nil
+	ctx, span, _, log := instrumentation.Start(ctx, "APIManagerOperand.ReadyCheck")
+	defer span.End()
+
+	// Get the deployment object and check status of the replicas. One ready
+	// replica should be enough for the installation to continue.
+	amDep := &appsv1.Deployment{}
+	key := client.ObjectKey{Name: "storageos-api-manager", Namespace: obj.GetNamespace()}
+	if err := c.client.Get(ctx, key, amDep); err != nil {
+		return false, err
+	}
+
+	if amDep.Status.AvailableReplicas > 0 {
+		log.V(4).Info("Found available replicas more than 0", "availableReplicas", amDep.Status.AvailableReplicas)
+		return true, nil
+	}
+
+	log.V(4).Info("api-manager not ready")
+	return false, nil
 }
 
 func (c *APIManagerOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {

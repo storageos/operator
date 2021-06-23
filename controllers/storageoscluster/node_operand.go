@@ -12,6 +12,7 @@ import (
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,8 +77,28 @@ var _ operand.Operand = &NodeOperand{}
 func (c *NodeOperand) Name() string                             { return c.name }
 func (c *NodeOperand) Requires() []string                       { return c.requires }
 func (c *NodeOperand) RequeueStrategy() operand.RequeueStrategy { return c.requeueStrategy }
+
 func (c *NodeOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
-	return true, nil
+	ctx, span, _, log := instrumentation.Start(ctx, "NodeOperand.ReadyCheck")
+	defer span.End()
+
+	// Get the DaemonSet object and check the status of the ready instances.
+	// One ready instance should be enough for the installation to continue.
+	// Other components that depend on control-plane should be able to connect
+	// to it.
+	nodeDS := &appsv1.DaemonSet{}
+	key := client.ObjectKey{Name: "storageos-daemonset", Namespace: obj.GetNamespace()}
+	if err := c.client.Get(ctx, key, nodeDS); err != nil {
+		return false, err
+	}
+
+	if nodeDS.Status.NumberReady > 0 {
+		log.V(4).Info("Found more than 0 ready nodes", "NumberReady", nodeDS.Status.NumberReady)
+		return true, nil
+	}
+
+	log.V(4).Info("storageos-daemonset not ready")
+	return false, nil
 }
 
 func (c *NodeOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
