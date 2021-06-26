@@ -5,7 +5,6 @@ metadata:
 spec:
   # Add fields here
   secretRefName: storageos-api
-  disableTelemetry: true
   storageClassName: "storageos-sc"
   kvBackend:
     address: "etcd-client:2379"
