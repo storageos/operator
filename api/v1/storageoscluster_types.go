@@ -25,6 +25,7 @@ type StorageOSClusterSpec struct {
 
 	// StorageClassName is the name of default StorageClass created for
 	// StorageOS volumes.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	StorageClassName string `json:"storageClassName,omitempty"`
 
 	// Service is the Service configuration for the cluster nodes.
@@ -32,6 +33,7 @@ type StorageOSClusterSpec struct {
 
 	// SecretRefName is the name of the secret object that contains all the
 	// sensitive cluster configurations.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	SecretRefName string `json:"secretRefName"`
 
 	// SecretRefNamespace is the namespace of the secret reference.
@@ -47,26 +49,32 @@ type StorageOSClusterSpec struct {
 	Ingress StorageOSClusterIngress `json:"ingress,omitempty"`
 
 	// Images defines the various container images used in the cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Images ContainerImages `json:"images,omitempty"`
 
 	// KVBackend defines the key-value store backend used in the cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	KVBackend StorageOSClusterKVBackend `json:"kvBackend"`
 
 	// Pause is to pause the operator for the cluster.
 	Pause bool `json:"pause,omitempty"`
 
 	// Debug is to set debug mode of the cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Debug bool `json:"debug,omitempty"`
 
 	// NodeSelectorTerms is to set the placement of storageos pods using
 	// node affinity requiredDuringSchedulingIgnoredDuringExecution.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	NodeSelectorTerms []corev1.NodeSelectorTerm `json:"nodeSelectorTerms,omitempty"`
 
 	// Tolerations is to set the placement of storageos pods using
 	// pod toleration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Resources is to set the resource requirements of the storageos containers.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Disable Pod Fencing.  With StatefulSets, Pods are only re-scheduled if
@@ -94,6 +102,7 @@ type StorageOSClusterSpec struct {
 	DisableFencing bool `json:"disableFencing,omitempty"`
 
 	// Disable Telemetry.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	DisableTelemetry bool `json:"disableTelemetry,omitempty"`
 
 	// Disable TCMU can be set to true to disable the TCMU storage driver.  This
@@ -115,6 +124,7 @@ type StorageOSClusterSpec struct {
 	// TLSEtcdSecretRefName is the name of the secret object that contains the
 	// etcd TLS certs. This secret is shared with etcd, therefore it's not part
 	// of the main storageos secret.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	TLSEtcdSecretRefName string `json:"tlsEtcdSecretRefName,omitempty"`
 
 	// TLSEtcdSecretRefNamespace is the namespace of the etcd TLS secret object.
@@ -200,12 +210,20 @@ type StorageOSClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Phase            string                `json:"phase,omitempty"`
+	// Phase is the phase of the StorageOS cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Phase string `json:"phase,omitempty"`
+
 	NodeHealthStatus map[string]NodeHealth `json:"nodeHealthStatus,omitempty"`
 	Nodes            []string              `json:"nodes,omitempty"`
 	Ready            string                `json:"ready,omitempty"`
-	Members          MembersStatus         `json:"members,omitempty"`
-	Conditions       []metav1.Condition    `json:"conditions,omitempty"`
+
+	// Members is the list of StorageOS nodes in the cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Members MembersStatus `json:"members,omitempty"`
+	// Conditions is a list of status of all the components of StorageOS.
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // NodeHealth contains health status of a node.
@@ -236,6 +254,7 @@ type MembersStatus struct {
 // +kubebuilder:resource:path=storageosclusters,shortName=stos
 
 // StorageOSCluster is the Schema for the storageosclusters API
+//+operator-sdk:csv:customresourcedefinitions:displayName="StorageOS Cluster",resources={{DaemonSet,apps/v1,storageos-daemonset},{Deployment,apps/v1,storageos-api-manager},{Deployment,apps/v1,storageos-csi-helper},{Deployment,apps/v1,storageos-scheduler}}
 type StorageOSCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

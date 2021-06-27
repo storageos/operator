@@ -21,9 +21,13 @@ metadata:
       ]
     capabilities: Deep Insights
     categories: Storage
+    containerImage: storageos/operator:v2.5.0
+    createdAt: ""
     description: Cloud-native, persistent storage for containers.
     operators.operatorframework.io/builder: operator-sdk-v1.8.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    repository: https://github.com/storageos/operator
+    support: StorageOS, Inc
   name: storageosoperator.v2.5.0
   namespace: placeholder
 spec:
@@ -31,9 +35,70 @@ spec:
   customresourcedefinitions:
     owned:
     - description: StorageOSCluster is the Schema for the storageosclusters API
-      displayName: Storage OSCluster
+      displayName: StorageOS Cluster
       kind: StorageOSCluster
       name: storageosclusters.storageos.com
+      resources:
+      - kind: Deployment
+        name: storageos-api-manager
+        version: apps/v1
+      - kind: Deployment
+        name: storageos-csi-helper
+        version: apps/v1
+      - kind: DaemonSet
+        name: storageos-daemonset
+        version: apps/v1
+      - kind: Deployment
+        name: storageos-scheduler
+        version: apps/v1
+      specDescriptors:
+      - description: Debug is to set debug mode of the cluster.
+        displayName: Debug
+        path: debug
+      - description: Disable Telemetry.
+        displayName: Disable Telemetry
+        path: disableTelemetry
+      - description: Images defines the various container images used in the cluster.
+        displayName: Images
+        path: images
+      - description: KVBackend defines the key-value store backend used in the cluster.
+        displayName: KVBackend
+        path: kvBackend
+      - description: NodeSelectorTerms is to set the placement of storageos pods using
+          node affinity requiredDuringSchedulingIgnoredDuringExecution.
+        displayName: Node Selector Terms
+        path: nodeSelectorTerms
+      - description: Resources is to set the resource requirements of the storageos
+          containers.
+        displayName: Resources
+        path: resources
+      - description: SecretRefName is the name of the secret object that contains
+          all the sensitive cluster configurations.
+        displayName: Secret Ref Name
+        path: secretRefName
+      - description: StorageClassName is the name of default StorageClass created
+          for StorageOS volumes.
+        displayName: Storage Class Name
+        path: storageClassName
+      - description: TLSEtcdSecretRefName is the name of the secret object that contains
+          the etcd TLS certs. This secret is shared with etcd, therefore it's not
+          part of the main storageos secret.
+        displayName: TLSEtcd Secret Ref Name
+        path: tlsEtcdSecretRefName
+      - description: Tolerations is to set the placement of storageos pods using pod
+          toleration.
+        displayName: Tolerations
+        path: tolerations
+      statusDescriptors:
+      - description: Conditions is a list of status of all the components of StorageOS.
+        displayName: Conditions
+        path: conditions
+      - description: Members is the list of StorageOS nodes in the cluster.
+        displayName: Members
+        path: members
+      - description: Phase is the phase of the StorageOS cluster.
+        displayName: Phase
+        path: phase
       version: v1
   description: |
     StorageOS is a cloud native, software-defined storage platform that
@@ -99,8 +164,6 @@ spec:
     * `secretRefName` - the name of a secret that contains keys for the
     credentials
     ([documentation](https://docs.storageos.com/docs/reference/cluster-operator/examples))
-    * `secretRefNamespace` - the namespace where the api credentials secret is
-    stored
     * `kvBackend.address` - address of the etcd cluster
     ([documentation](https://docs.storageos.com/docs/prerequisites/etcd/))
 
@@ -269,7 +332,11 @@ spec:
   - email: support@storageos.com
     name: StorageOS, Inc
   maturity: stable
+  minKubeVersion: 1.18.0
   provider:
     name: StorageOS, Inc
     url: https://storageos.com
+  selector:
+    matchLabels:
+      operated-by: storageosoperator
   version: 2.5.0
