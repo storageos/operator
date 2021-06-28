@@ -216,7 +216,10 @@ type StorageOSClusterStatus struct {
 
 	NodeHealthStatus map[string]NodeHealth `json:"nodeHealthStatus,omitempty"`
 	Nodes            []string              `json:"nodes,omitempty"`
-	Ready            string                `json:"ready,omitempty"`
+
+	// Ready is the ready status of the StorageOS control-plane pods.
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Ready string `json:"ready,omitempty"`
 
 	// Members is the list of StorageOS nodes in the cluster.
 	//+operator-sdk:csv:customresourcedefinitions:type=status

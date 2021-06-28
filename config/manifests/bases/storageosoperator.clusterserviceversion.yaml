@@ -97,6 +97,9 @@ spec:
       - description: Phase is the phase of the StorageOS cluster.
         displayName: Phase
         path: phase
+      - description: Ready is the ready status of the StorageOS control-plane pods.
+        displayName: Ready
+        path: ready
       version: v1
   description: |
     StorageOS is a cloud native, software-defined storage platform that

@@ -8,13 +8,15 @@ import (
 	"github.com/darkowlzz/operator-toolkit/object"
 	operatorv1 "github.com/darkowlzz/operator-toolkit/operator/v1"
 	"github.com/go-logr/logr"
-	storageoscomv1 "github.com/storageos/operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	storageoscomv1 "github.com/storageos/operator/api/v1"
 )
 
 const (
@@ -95,8 +97,19 @@ func (c *StorageOSClusterController) UpdateStatus(ctx context.Context, obj clien
 	csiCondition := getCSICondition(ctx, c.Client, obj.GetNamespace(), log)
 	meta.SetStatusCondition(&cluster.Status.Conditions, csiCondition)
 
-	// Evaluate the cluster condition based on the component status.
 	conditions := cluster.Status.Conditions
+
+	// Evaluate the cluster phase based on the component status.
+	phase := "Pending"
+	if meta.IsStatusConditionTrue(conditions, schedulerReadyType) ||
+		meta.IsStatusConditionTrue(conditions, nodeReadyType) ||
+		meta.IsStatusConditionTrue(conditions, apiManagerReadyType) ||
+		meta.IsStatusConditionTrue(conditions, csiReadyType) {
+		// Some components are ready, Creating phase.
+		phase = "Creating"
+	}
+
+	// Evaluate the cluster condition based on the component status.
 	if meta.IsStatusConditionTrue(conditions, schedulerReadyType) &&
 		meta.IsStatusConditionTrue(conditions, nodeReadyType) &&
 		meta.IsStatusConditionTrue(conditions, apiManagerReadyType) &&
@@ -110,7 +123,23 @@ func (c *StorageOSClusterController) UpdateStatus(ctx context.Context, obj clien
 			Message: "Cluster Ready",
 		}
 		meta.SetStatusCondition(&cluster.Status.Conditions, readyCondition)
+
+		// All the components are ready, Running phase.
+		phase = "Running"
 	}
+
+	// Set the cluster phase.
+	cluster.Status.Phase = phase
+
+	// Get the control-plane instances and set them in the members status.
+	members, err := getControlPlaneMembers(ctx, c.Client, obj.GetNamespace(), log)
+	if err != nil {
+		return err
+	}
+	cluster.Status.Members = members
+
+	// Populate the ready value from members status.
+	cluster.Status.Ready = getReadyFromMembersStatus(members)
 
 	return nil
 }
@@ -201,4 +230,44 @@ func getCSICondition(ctx context.Context, cl client.Client, namespace string, lo
 		csiCondition.Message = "CSI Ready"
 	}
 	return csiCondition
+}
+
+// getLabelsForControlPlane returns the labels for selecting storageos
+// control-plane.
+func getLabelsForControlPlane() map[string]string {
+	return map[string]string{
+		"app":                         "storageos",
+		"app.kubernetes.io/component": "control-plane",
+	}
+}
+
+// getReadyFromMembersStatus calculates the ready status of the cluster based
+// on the member status.
+func getReadyFromMembersStatus(m storageoscomv1.MembersStatus) string {
+	return fmt.Sprintf("%d/%d", len(m.Ready), len(m.Ready)+len(m.Unready))
+}
+
+// getControlPlaneMembers fetches the storageos control-plane pods and returns
+// a MembersStatus based on the pod status.
+func getControlPlaneMembers(ctx context.Context, cl client.Client, namespace string, log logr.Logger) (storageoscomv1.MembersStatus, error) {
+	ms := storageoscomv1.MembersStatus{}
+	cpPods := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabels(getLabelsForControlPlane()),
+	}
+	if err := cl.List(ctx, cpPods, listOpts...); err != nil {
+		log.Error(err, "failed to list control-plane pods", "namespace", namespace)
+		return ms, err
+	}
+
+	for _, pod := range cpPods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			ms.Ready = append(ms.Ready, pod.Status.HostIP)
+		} else {
+			ms.Unready = append(ms.Unready, pod.Status.HostIP)
+		}
+	}
+
+	return ms, nil
 }

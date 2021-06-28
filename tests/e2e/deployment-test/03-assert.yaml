@@ -123,3 +123,33 @@ metadata:
   labels:
     app: storageos
     app.kubernetes.io/component: control-plane
+---
+apiVersion: storageos.com/v1
+kind: StorageOSCluster
+metadata:
+  name: storageoscluster-sample
+  namespace: default
+status:
+  conditions:
+  - message: Scheduler Ready
+    reason: Ready
+    status: "True"
+    type: SchedulerReady
+  - message: Node Ready
+    reason: Ready
+    status: "True"
+    type: NodeReady
+  - message: APIManager Ready
+    reason: Ready
+    status: "True"
+    type: APIManagerReady
+  - message: CSI Ready
+    reason: Ready
+    status: "True"
+    type: CSIReady
+  - message: Cluster Ready
+    reason: Ready
+    status: "True"
+    type: Ready
+  phase: Running
+  ready: 1/1

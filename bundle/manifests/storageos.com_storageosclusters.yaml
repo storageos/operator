@@ -514,6 +514,8 @@ spec:
                 description: Phase is the phase of the StorageOS cluster.
                 type: string
               ready:
+                description: Ready is the ready status of the StorageOS control-plane
+                  pods.
                 type: string
             type: object
         type: object
