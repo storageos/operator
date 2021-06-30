@@ -21,6 +21,7 @@ import (
 
 	storageoscomv1 "github.com/storageos/operator/api/v1"
 	"github.com/storageos/operator/internal/image"
+	"github.com/storageos/operator/internal/storageos"
 	stransform "github.com/storageos/operator/internal/transform"
 )
 
@@ -127,6 +128,24 @@ func (c *NodeOperand) Delete(ctx context.Context, obj client.Object) (eventv1.Re
 	}
 
 	return nil, b.Delete(ctx)
+}
+
+// PostReady performs actions after the control-plane is ready.
+func (c *NodeOperand) PostReady(ctx context.Context, obj client.Object) error {
+	ctx, span, _, _ := instrumentation.Start(ctx, "NodeOperand.PostReady")
+	defer span.End()
+
+	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
+	if !ok {
+		return fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
+	}
+
+	// Get a control plane client and configure the cluster.
+	stosCl, err := getControlPlaneClient(ctx, c.client, cluster)
+	if err != nil {
+		return err
+	}
+	return configureControlPlane(ctx, stosCl, cluster)
 }
 
 func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
@@ -273,6 +292,69 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 			kustomize.AddImages(images),
 		}),
 	)
+}
+
+// getControlPlaneClient creates an authenticated control plane client and
+// returns it.
+func getControlPlaneClient(ctx context.Context, kcl client.Client, cluster *storageoscomv1.StorageOSCluster) (*storageos.Client, error) {
+	ctx, span, _, _ := instrumentation.Start(ctx, "getControlPlaneClient")
+	defer span.End()
+
+	// Get storageos creds and configure a client.
+	secret := &corev1.Secret{}
+	secretKey := client.ObjectKey{Name: cluster.Spec.SecretRefName, Namespace: cluster.GetNamespace()}
+	if err := kcl.Get(ctx, secretKey, secret); err != nil {
+		return nil, fmt.Errorf("failed to get storageos credentials: %w", err)
+	}
+
+	cpEndpoint := fmt.Sprintf("%s://%s.%s.svc:%d",
+		storageos.DefaultScheme, storageosService,
+		cluster.GetNamespace(), storageos.DefaultPort,
+	)
+	stosCl, err := storageos.New(cpEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := stosCl.Authenticate(ctx,
+		string(secret.Data[storageos.UsernameKey]),
+		string(secret.Data[storageos.PasswordKey])); err != nil {
+		return nil, err
+	}
+	return stosCl, nil
+}
+
+// configureControlPlane takes the desired cluster configuration and
+// reconfigures the control-plane.
+func configureControlPlane(ctx context.Context, stosCl *storageos.Client, cluster *storageoscomv1.StorageOSCluster) error {
+	ctx, span, _, log := instrumentation.Start(ctx, "configureControlPlane")
+	defer span.End()
+
+	// Get current cluster config.
+	currentConfig, err := stosCl.GetCluster(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Construct desired configuration.
+	desiredConfig := &storageos.Cluster{
+		DisableTelemetry:      cluster.Spec.DisableTelemetry,
+		DisableCrashReporting: cluster.Spec.DisableTelemetry,
+		DisableVersionCheck:   cluster.Spec.DisableTelemetry,
+		LogLevel:              currentConfig.LogLevel,
+		LogFormat:             currentConfig.LogFormat,
+		Version:               currentConfig.Version,
+	}
+	if cluster.Spec.Debug {
+		desiredConfig.LogLevel = storageos.LogLevelDebug
+	}
+
+	// Compare the current and desired configuration and update if necessary.
+	if currentConfig.IsEqual(desiredConfig) {
+		return nil
+	}
+	log.Info("current config doesn't match the desired config, applying update")
+	return stosCl.UpdateCluster(ctx, desiredConfig)
 }
 
 func NewNodeOperand(

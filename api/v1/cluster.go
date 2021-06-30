@@ -13,7 +13,7 @@ const (
 	defaultCSIEndpoint = "/storageos/csi.sock"
 
 	// Log levels.
-	debugLogLevel = "xdebug"
+	debugLogLevel = "debug"
 	infoLogLevel  = "info"
 )
 

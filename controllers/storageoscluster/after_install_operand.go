@@ -31,6 +31,7 @@ func (ai *AfterInstallOperand) RequeueStrategy() operand.RequeueStrategy { retur
 func (ai *AfterInstallOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
 	return true, nil
 }
+func (c *AfterInstallOperand) PostReady(ctx context.Context, obj client.Object) error { return nil }
 
 func (ai *AfterInstallOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
 	ctx, span, _, _ := instrumentation.Start(ctx, "AfterInstallOperand.Ensure")

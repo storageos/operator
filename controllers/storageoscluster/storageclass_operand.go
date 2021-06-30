@@ -49,6 +49,7 @@ func (sc *StorageClassOperand) RequeueStrategy() operand.RequeueStrategy { retur
 func (sc *StorageClassOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, error) {
 	return true, nil
 }
+func (c *StorageClassOperand) PostReady(ctx context.Context, obj client.Object) error { return nil }
 
 func (sc *StorageClassOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
 	_, span, _, log := instrumentation.Start(ctx, "StorageClassOperand.Ensure")

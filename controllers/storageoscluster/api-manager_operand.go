@@ -68,6 +68,8 @@ func (c *APIManagerOperand) ReadyCheck(ctx context.Context, obj client.Object) (
 	return false, nil
 }
 
+func (c *APIManagerOperand) PostReady(ctx context.Context, obj client.Object) error { return nil }
+
 func (c *APIManagerOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
 	ctx, span, _, _ := instrumentation.Start(ctx, "APIManagerOperand.Ensure")
 	defer span.End()

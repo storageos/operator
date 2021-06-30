@@ -70,6 +70,8 @@ func (c *CSIOperand) ReadyCheck(ctx context.Context, obj client.Object) (bool, e
 	return false, nil
 }
 
+func (c *CSIOperand) PostReady(ctx context.Context, obj client.Object) error { return nil }
+
 func (c *CSIOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
 	ctx, span, _, _ := instrumentation.Start(ctx, "CSIOperand.Ensure")
 	defer span.End()

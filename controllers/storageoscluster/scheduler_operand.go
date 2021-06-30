@@ -66,6 +66,8 @@ func (c *SchedulerOperand) ReadyCheck(ctx context.Context, obj client.Object) (b
 	return false, nil
 }
 
+func (c *SchedulerOperand) PostReady(ctx context.Context, obj client.Object) error { return nil }
+
 func (c *SchedulerOperand) Ensure(ctx context.Context, obj client.Object, ownerRef metav1.OwnerReference) (eventv1.ReconcilerEvent, error) {
 	ctx, span, _, _ := instrumentation.Start(ctx, "SchedulerOperand.Ensure")
 	defer span.End()
