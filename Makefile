@@ -168,7 +168,8 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-install-manifest: ## Generate the operator install manifest.
+install-manifest: manifests kustomize ## Generate the operator install manifest.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default > storageos-operator.yaml
 
 build-snapshot: ## Build development binaries and container images using goreleaser.
