@@ -1,0 +1,11 @@
+apiVersion: storageos.com/v1
+kind: StorageOSCluster
+metadata:
+  name: storageoscluster-sample2
+  namespace: default
+spec:
+  secretRefName: storageos-api
+  disableTelemetry: true
+  storageClassName: "storageos-sc"
+  kvBackend:
+    address: "etcd-client.default.svc.cluster.local:2379"
