@@ -136,6 +136,7 @@ run: generate fmt vet manifests ## Run a controller from your host.
 	RELATED_IMAGE_STORAGEOS_NODE=${NODE_IMG} \
 	RELATED_IMAGE_CSIV1_NODE_DRIVER_REGISTRAR=${NODE_DRIVER_REG_IMG} \
 	RELATED_IMAGE_CSIV1_LIVENESS_PROBE=${LIVENESS_PROBE_IMG} \
+	POD_NAMESPACE=default \
 	go run ./main.go
 
 config-update: ## Update the operator configuration.
