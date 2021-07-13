@@ -1,6 +1,7 @@
 componentConfig: true
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
@@ -13,9 +14,16 @@ resources:
   controller: true
   group: storageos.com
   kind: StorageOSCluster
-  path: github.com/storageos/operator/api/v1
+  path: github.com/storageos/operator/apis/v1
   version: v1
   webhooks:
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  group: config.storageos.com
+  kind: OperatorConfig
+  path: github.com/storageos/operator/apis/config/v1
+  version: v1
 version: "3"

@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/filesys"
 
-	storageoscomv1 "github.com/storageos/operator/api/v1"
+	storageoscomv1 "github.com/storageos/operator/apis/v1"
 	stransform "github.com/storageos/operator/internal/transform"
 )
 

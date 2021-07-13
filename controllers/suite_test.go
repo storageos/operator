@@ -13,7 +13,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	storageoscomv1 "github.com/storageos/operator/api/v1"
+	storageoscomv1 "github.com/storageos/operator/apis/v1"
 	// +kubebuilder:scaffold:imports
 )
 

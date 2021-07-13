@@ -1,0 +1,7 @@
+apiVersion: config.storageos.com/v1
+kind: OperatorConfig
+metadata:
+  name: operatorconfig-sample
+spec:
+  # Add fields here
+  foo: bar

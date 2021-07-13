@@ -16,7 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	storageoscomv1 "github.com/storageos/operator/api/v1"
+	storageoscomv1 "github.com/storageos/operator/apis/v1"
 )
 
 const (

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"os"
-	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -21,7 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	storageoscomv1 "github.com/storageos/operator/api/v1"
+	configstorageoscomv1 "github.com/storageos/operator/apis/config.storageos.com/v1"
+	storageoscomv1 "github.com/storageos/operator/apis/v1"
 	"github.com/storageos/operator/controllers"
 	whctrlr "github.com/storageos/operator/controllers/webhook"
 	// +kubebuilder:scaffold:imports
@@ -39,6 +39,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(storageoscomv1.AddToScheme(scheme))
+	utilruntime.Must(configstorageoscomv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -66,10 +67,11 @@ func main() {
 
 	// Load controller manager configuration and create manager options from
 	// it.
+	ctrlConfig := configstorageoscomv1.OperatorConfig{}
 	options := ctrl.Options{Scheme: scheme}
 	if configFile != "" {
 		var err error
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
+		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
 		if err != nil {
 			setupLog.Error(err, "unable to load the config file")
 			os.Exit(1)
@@ -99,14 +101,14 @@ func main() {
 
 	// Configure the certificate manager.
 	certOpts := cert.Options{
-		CertRefreshInterval: 15 * time.Minute,
+		CertRefreshInterval: ctrlConfig.WebhookCertRefreshInterval.Duration,
 		Service: &admissionregistrationv1.ServiceReference{
-			Name:      "storageos-operator-webhook-service",
+			Name:      ctrlConfig.WebhookServiceName,
 			Namespace: currentNS,
 		},
 		Client:                      cli,
-		SecretRef:                   &types.NamespacedName{Name: "storageos-operator-webhook-secret", Namespace: currentNS},
-		ValidatingWebhookConfigRefs: []types.NamespacedName{{Name: "storageos-operator-validating-webhook-configuration"}},
+		SecretRef:                   &types.NamespacedName{Name: ctrlConfig.WebhookSecretRef, Namespace: currentNS},
+		ValidatingWebhookConfigRefs: []types.NamespacedName{{Name: ctrlConfig.ValidatingWebhookConfigRef}},
 	}
 	// Create certificate manager without manager to start the provisioning
 	// immediately.

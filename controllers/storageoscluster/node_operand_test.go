@@ -9,7 +9,7 @@ import (
 	api "github.com/storageos/go-api/v2"
 	"github.com/stretchr/testify/assert"
 
-	storageoscomv1 "github.com/storageos/operator/api/v1"
+	storageoscomv1 "github.com/storageos/operator/apis/v1"
 	"github.com/storageos/operator/internal/storageos"
 	"github.com/storageos/operator/internal/storageos/mocks"
 )

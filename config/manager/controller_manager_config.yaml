@@ -1,5 +1,5 @@
-apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
-kind: ControllerManagerConfig
+apiVersion: config.storageos.com/v1
+kind: OperatorConfig
 health:
   healthProbeBindAddress: :8081
 metrics:
@@ -9,3 +9,7 @@ webhook:
 leaderElection:
   leaderElect: true
   resourceName: storageos-operator-lease
+webhookCertRefreshInterval: 15m
+webhookServiceName: storageos-operator-webhook-service
+webhookSecretRef: storageos-operator-webhook-secret
+validatingWebhookConfigRef: storageos-operator-validating-webhook-configuration
