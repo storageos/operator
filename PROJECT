@@ -1,3 +1,4 @@
+componentConfig: true
 layout:
 - go.kubebuilder.io/v3
 plugins:
