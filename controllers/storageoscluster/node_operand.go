@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
+	"github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
@@ -71,6 +72,7 @@ type NodeOperand struct {
 	requires        []string
 	requeueStrategy operand.RequeueStrategy
 	fs              filesys.FileSystem
+	kubectlClient   kubectl.KubectlClient
 }
 
 var _ operand.Operand = &NodeOperand{}
@@ -106,7 +108,7 @@ func (c *NodeOperand) Ensure(ctx context.Context, obj client.Object, ownerRef me
 	ctx, span, _, _ := instrumentation.Start(ctx, "NodeOperand.Ensure")
 	defer span.End()
 
-	b, err := getNodeBuilder(c.fs, obj)
+	b, err := getNodeBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -121,7 +123,7 @@ func (c *NodeOperand) Delete(ctx context.Context, obj client.Object) (eventv1.Re
 	ctx, span, _, _ := instrumentation.Start(ctx, "NodeOperand.Delete")
 	defer span.End()
 
-	b, err := getNodeBuilder(c.fs, obj)
+	b, err := getNodeBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -148,7 +150,7 @@ func (c *NodeOperand) PostReady(ctx context.Context, obj client.Object) error {
 	return configureControlPlane(ctx, stosCl, cluster)
 }
 
-func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+func getNodeBuilder(fs filesys.FileSystem, obj client.Object, kcl kubectl.KubectlClient) (*declarative.Builder, error) {
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
@@ -291,6 +293,7 @@ func getNodeBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Buil
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
 		}),
+		declarative.WithKubectlClient(kcl),
 	)
 }
 
@@ -363,6 +366,7 @@ func NewNodeOperand(
 	requires []string,
 	requeueStrategy operand.RequeueStrategy,
 	fs filesys.FileSystem,
+	kcl kubectl.KubectlClient,
 ) *NodeOperand {
 	return &NodeOperand{
 		name:            name,
@@ -370,5 +374,6 @@ func NewNodeOperand(
 		requires:        requires,
 		requeueStrategy: requeueStrategy,
 		fs:              fs,
+		kubectlClient:   kcl,
 	}
 }

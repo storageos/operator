@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
+	"github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
@@ -39,6 +40,7 @@ type APIManagerOperand struct {
 	requires        []string
 	requeueStrategy operand.RequeueStrategy
 	fs              filesys.FileSystem
+	kubectlClient   kubectl.KubectlClient
 }
 
 var _ operand.Operand = &APIManagerOperand{}
@@ -74,7 +76,7 @@ func (c *APIManagerOperand) Ensure(ctx context.Context, obj client.Object, owner
 	ctx, span, _, _ := instrumentation.Start(ctx, "APIManagerOperand.Ensure")
 	defer span.End()
 
-	b, err := getAPIManagerBuilder(c.fs, obj)
+	b, err := getAPIManagerBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -87,7 +89,7 @@ func (c *APIManagerOperand) Delete(ctx context.Context, obj client.Object) (even
 	ctx, span, _, _ := instrumentation.Start(ctx, "APIManagerOperand.Delete")
 	defer span.End()
 
-	b, err := getAPIManagerBuilder(c.fs, obj)
+	b, err := getAPIManagerBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -95,7 +97,7 @@ func (c *APIManagerOperand) Delete(ctx context.Context, obj client.Object) (even
 	return nil, b.Delete(ctx)
 }
 
-func getAPIManagerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+func getAPIManagerBuilder(fs filesys.FileSystem, obj client.Object, kcl kubectl.KubectlClient) (*declarative.Builder, error) {
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
@@ -146,6 +148,7 @@ func getAPIManagerBuilder(fs filesys.FileSystem, obj client.Object) (*declarativ
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
 		}),
+		declarative.WithKubectlClient(kcl),
 	)
 }
 
@@ -155,6 +158,7 @@ func NewAPIManagerOperand(
 	requires []string,
 	requeueStrategy operand.RequeueStrategy,
 	fs filesys.FileSystem,
+	kcl kubectl.KubectlClient,
 ) *APIManagerOperand {
 	return &APIManagerOperand{
 		name:            name,
@@ -162,5 +166,6 @@ func NewAPIManagerOperand(
 		requires:        requires,
 		requeueStrategy: requeueStrategy,
 		fs:              fs,
+		kubectlClient:   kcl,
 	}
 }

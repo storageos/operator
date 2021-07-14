@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
+	"github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
@@ -38,6 +39,7 @@ type SchedulerOperand struct {
 	requires        []string
 	requeueStrategy operand.RequeueStrategy
 	fs              filesys.FileSystem
+	kubectlClient   kubectl.KubectlClient
 }
 
 var _ operand.Operand = &SchedulerOperand{}
@@ -72,7 +74,7 @@ func (c *SchedulerOperand) Ensure(ctx context.Context, obj client.Object, ownerR
 	ctx, span, _, _ := instrumentation.Start(ctx, "SchedulerOperand.Ensure")
 	defer span.End()
 
-	b, err := getSchedulerBuilder(c.fs, obj)
+	b, err := getSchedulerBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -85,7 +87,7 @@ func (c *SchedulerOperand) Delete(ctx context.Context, obj client.Object) (event
 	ctx, span, _, _ := instrumentation.Start(ctx, "SchedulerOperand.Delete")
 	defer span.End()
 
-	b, err := getSchedulerBuilder(c.fs, obj)
+	b, err := getSchedulerBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -94,7 +96,7 @@ func (c *SchedulerOperand) Delete(ctx context.Context, obj client.Object) (event
 	return nil, b.Delete(ctx)
 }
 
-func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object, kcl kubectl.KubectlClient) (*declarative.Builder, error) {
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
@@ -132,6 +134,7 @@ func getSchedulerBuilder(fs filesys.FileSystem, obj client.Object) (*declarative
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
 		}),
+		declarative.WithKubectlClient(kcl),
 	)
 }
 
@@ -141,6 +144,7 @@ func NewSchedulerOperand(
 	requires []string,
 	requeueStrategy operand.RequeueStrategy,
 	fs filesys.FileSystem,
+	kcl kubectl.KubectlClient,
 ) *SchedulerOperand {
 	return &SchedulerOperand{
 		name:            name,
@@ -148,5 +152,6 @@ func NewSchedulerOperand(
 		requires:        requires,
 		requeueStrategy: requeueStrategy,
 		fs:              fs,
+		kubectlClient:   kcl,
 	}
 }

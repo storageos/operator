@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
+	"github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/darkowlzz/operator-toolkit/declarative/transform"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
@@ -39,6 +40,7 @@ type StorageClassOperand struct {
 	requires        []string
 	requeueStrategy operand.RequeueStrategy
 	fs              filesys.FileSystem
+	kubectlClient   kubectl.KubectlClient
 }
 
 var _ operand.Operand = &StorageClassOperand{}
@@ -55,7 +57,7 @@ func (sc *StorageClassOperand) Ensure(ctx context.Context, obj client.Object, ow
 	_, span, _, log := instrumentation.Start(ctx, "StorageClassOperand.Ensure")
 	defer span.End()
 
-	b, err := getStorageClassBuilder(sc.fs, obj)
+	b, err := getStorageClassBuilder(sc.fs, obj, sc.kubectlClient)
 	if err != nil {
 		if errors.Is(err, noResourceErr) {
 			log.Info("no storageclass specified")
@@ -72,7 +74,7 @@ func (sc *StorageClassOperand) Delete(ctx context.Context, obj client.Object) (e
 	ctx, span, _, _ := instrumentation.Start(ctx, "StorageClassOperand.Delete")
 	defer span.End()
 
-	b, err := getStorageClassBuilder(sc.fs, obj)
+	b, err := getStorageClassBuilder(sc.fs, obj, sc.kubectlClient)
 	if err != nil {
 		if errors.Is(err, noResourceErr) {
 			return nil, nil
@@ -84,7 +86,7 @@ func (sc *StorageClassOperand) Delete(ctx context.Context, obj client.Object) (e
 	return nil, b.Delete(ctx)
 }
 
-func getStorageClassBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+func getStorageClassBuilder(fs filesys.FileSystem, obj client.Object, kcl kubectl.KubectlClient) (*declarative.Builder, error) {
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
@@ -111,6 +113,7 @@ func getStorageClassBuilder(fs filesys.FileSystem, obj client.Object) (*declarat
 		declarative.WithManifestTransform(transform.ManifestTransform{
 			"storageclass/storageclass.yaml": scTransforms,
 		}),
+		declarative.WithKubectlClient(kcl),
 	)
 }
 
@@ -120,6 +123,7 @@ func NewStorageClassOperand(
 	requires []string,
 	requeueStrategy operand.RequeueStrategy,
 	fs filesys.FileSystem,
+	kcl kubectl.KubectlClient,
 ) *StorageClassOperand {
 	return &StorageClassOperand{
 		name:            name,
@@ -127,5 +131,6 @@ func NewStorageClassOperand(
 		requires:        requires,
 		requeueStrategy: requeueStrategy,
 		fs:              fs,
+		kubectlClient:   kcl,
 	}
 }

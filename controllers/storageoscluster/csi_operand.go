@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/darkowlzz/operator-toolkit/declarative"
+	"github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/darkowlzz/operator-toolkit/declarative/kustomize"
 	eventv1 "github.com/darkowlzz/operator-toolkit/event/v1"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/operand"
@@ -42,6 +43,7 @@ type CSIOperand struct {
 	requires        []string
 	requeueStrategy operand.RequeueStrategy
 	fs              filesys.FileSystem
+	kubectlClient   kubectl.KubectlClient
 }
 
 var _ operand.Operand = &CSIOperand{}
@@ -76,7 +78,7 @@ func (c *CSIOperand) Ensure(ctx context.Context, obj client.Object, ownerRef met
 	ctx, span, _, _ := instrumentation.Start(ctx, "CSIOperand.Ensure")
 	defer span.End()
 
-	b, err := getCSIBuilder(c.fs, obj)
+	b, err := getCSIBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -89,7 +91,7 @@ func (c *CSIOperand) Delete(ctx context.Context, obj client.Object) (eventv1.Rec
 	ctx, span, _, _ := instrumentation.Start(ctx, "CSIOperand.Delete")
 	defer span.End()
 
-	b, err := getCSIBuilder(c.fs, obj)
+	b, err := getCSIBuilder(c.fs, obj, c.kubectlClient)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -98,7 +100,7 @@ func (c *CSIOperand) Delete(ctx context.Context, obj client.Object) (eventv1.Rec
 	return nil, b.Delete(ctx)
 }
 
-func getCSIBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Builder, error) {
+func getCSIBuilder(fs filesys.FileSystem, obj client.Object, kcl kubectl.KubectlClient) (*declarative.Builder, error) {
 	cluster, ok := obj.(*storageoscomv1.StorageOSCluster)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert %v to StorageOSCluster", obj)
@@ -129,6 +131,7 @@ func getCSIBuilder(fs filesys.FileSystem, obj client.Object) (*declarative.Build
 			kustomize.AddNamespace(cluster.GetNamespace()),
 			kustomize.AddImages(images),
 		}),
+		declarative.WithKubectlClient(kcl),
 	)
 }
 
@@ -138,6 +141,7 @@ func NewCSIOperand(
 	requires []string,
 	requeueStrategy operand.RequeueStrategy,
 	fs filesys.FileSystem,
+	kcl kubectl.KubectlClient,
 ) *CSIOperand {
 	return &CSIOperand{
 		name:            name,
@@ -145,5 +149,6 @@ func NewCSIOperand(
 		requires:        requires,
 		requeueStrategy: requeueStrategy,
 		fs:              fs,
+		kubectlClient:   kcl,
 	}
 }
