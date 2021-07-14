@@ -52,6 +52,7 @@ rules:
   - events
   verbs:
   - create
+  - patch
 - apiGroups:
   - coordination.k8s.io
   resources:
