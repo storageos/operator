@@ -10,6 +10,7 @@ import (
 
 	"github.com/darkowlzz/operator-toolkit/telemetry/export"
 	"github.com/darkowlzz/operator-toolkit/webhook/cert"
+	"go.uber.org/zap/zapcore"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,13 +50,20 @@ func main() {
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
-	opts := zap.Options{
-		Development: true,
-	}
+
+	var opts zap.Options
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// Configure logger.
+	f := func(ec *zapcore.EncoderConfig) {
+		ec.TimeKey = "timestamp"
+		ec.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+	}
+	encoderOpts := func(o *zap.Options) {
+		o.EncoderConfigOptions = append(o.EncoderConfigOptions, f)
+	}
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts), zap.StacktraceLevel(zapcore.PanicLevel), encoderOpts))
 
 	// Setup telemetry.
 	telemetryShutdown, err := export.InstallJaegerExporter("storageos-operator")

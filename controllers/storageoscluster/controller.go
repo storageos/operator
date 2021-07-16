@@ -56,10 +56,14 @@ func (c *StorageOSClusterController) Initialize(ctx context.Context, obj client.
 }
 
 func (c *StorageOSClusterController) Operate(ctx context.Context, obj client.Object) (result ctrl.Result, err error) {
+	_, _, _, log := instrumentation.Start(ctx, "StorageOSClusterController.Operate")
+	log.Info("ensuring cluster with the current configuration", "cluster-name", obj.GetName(), "namespace", obj.GetNamespace())
 	return c.Operator.Ensure(ctx, obj, object.OwnerReferenceFromObject(obj))
 }
 
 func (c *StorageOSClusterController) Cleanup(ctx context.Context, obj client.Object) (result ctrl.Result, err error) {
+	_, _, _, log := instrumentation.Start(ctx, "StorageOSClusterController.Operate")
+	log.Info("deleting cluster", "cluster-name", obj.GetName(), "namespace", obj.GetNamespace())
 	return c.Operator.Cleanup(ctx, obj)
 }
 
