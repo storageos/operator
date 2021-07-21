@@ -7,10 +7,12 @@ import (
 	compositev1 "github.com/darkowlzz/operator-toolkit/controller/composite/v1"
 	"github.com/darkowlzz/operator-toolkit/declarative/loader"
 	"github.com/darkowlzz/operator-toolkit/operator/v1/executor"
+	tkpredicate "github.com/darkowlzz/operator-toolkit/predicate"
 	"github.com/darkowlzz/operator-toolkit/telemetry"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	storageoscomv1 "github.com/storageos/operator/apis/v1"
 	"github.com/storageos/operator/controllers/storageoscluster"
@@ -78,7 +80,15 @@ func (r *StorageOSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to create new CompositeReconciler: %w", err)
 	}
 
+	// Use the GenerationChangedPredicate to ignore the status update events
+	// but capture the events due to labels, annotations and finalizers change.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&storageoscomv1.StorageOSCluster{}).
+		WithEventFilter(predicate.Or(
+			predicate.GenerationChangedPredicate{},
+			predicate.LabelChangedPredicate{},
+			predicate.AnnotationChangedPredicate{},
+			tkpredicate.FinalizerChangedPredicate{},
+		)).
 		Complete(r)
 }

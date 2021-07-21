@@ -3,7 +3,7 @@ module github.com/storageos/operator
 go 1.16
 
 require (
-	github.com/darkowlzz/operator-toolkit v0.0.0-20210714162344-c5858cb84d6b
+	github.com/darkowlzz/operator-toolkit v0.0.0-20210721205719-05b03cd74f02
 	github.com/go-logr/logr v0.3.0
 	github.com/golang/mock v1.5.0
 	github.com/onsi/ginkgo v1.14.1
